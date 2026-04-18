@@ -1,0 +1,3805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaporwhim Lounge - Working Version</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            /* THE ACTUAL WORKING CHECKERBOARD! */
+            background-color: #fff;
+            background-image: repeating-conic-gradient(#fff 0deg 90deg, #000 90deg 180deg);
+            background-size: 40px 40px;
+            background-position: 0 0;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            box-shadow: none;
+            border-radius: 0;
+            text-align: center;
+            box-sizing: border-box;
+            border: 4px solid #fff;
+        }
+
+        /* Hide all screens by default */
+        .screen {
+            display: none;
+        }
+
+        /* Show only active screen */
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        input {
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+        }
+
+        button {
+            background: #000;
+            color: #fff;
+            border: 4px solid #fff;
+            padding: 12px 24px;
+            border-radius: 0;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 28px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: #fff;
+            color: #000;
+            transform: translate(-2px, -2px);
+            box-shadow: 2px 2px 0 #000;
+        }
+
+        canvas {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            margin: 1rem;
+            image-rendering: pixelated;
+            background: white;
+        }
+
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: #333;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
+        }
+
+        .lounge-container {
+            display: flex;
+            gap: 1rem;
+            height: calc(100vh - 120px);
+            width: 100%;
+        }
+
+        .lounge-area {
+            flex: 1;
+            background: #FF69B4; /* Hot Pink - solid color! */
+            border: 4px solid #00FFFF; /* Cyan */
+            border-radius: 0;
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+            /* No complex gradients = no lag! */
+        }
+
+        .chat-container {
+            width: 250px;
+            background: #9370DB; /* Medium Purple */
+            border: 4px solid #FF1493; /* Deep Pink */
+            border-radius: 0;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chatMessages {
+            flex: 1;
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+            text-align: left;
+            background: #FFE4B5; /* Moccasin (warm pastel) */
+            padding: 0.5rem;
+            border-radius: 0;
+            margin-bottom: 0.5rem;
+            border: 2px solid #FF1493;
+            font-family: 'Courier New', monospace;
+        }
+
+        .furniture {
+            position: absolute;
+            background: #8B4513;
+            border-radius: 5px;
+        }
+
+        .couch {
+            bottom: 0; /* ON THE GROUND */
+            left: 50px;
+            width: 120px;
+            height: 40px;
+            background: #FF1493; /* Deep Pink */
+            border: 4px solid #00FFFF; /* Cyan */
+            border-radius: 0;
+            position: absolute;
+            z-index: 5;
+        }
+
+        .couch::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 10px;
+            right: 10px;
+            height: 20px;
+            background: #FF1493; /* Deep Pink */
+            border-radius: 0;
+            border: 4px solid #00FFFF; /* Cyan */
+            border-bottom: none;
+        }
+
+        .door {
+            background: #DA70D6; /* Orchid Purple - Level 1 */
+            border: 4px solid #FF69B4; /* Hot Pink */
+            border-radius: 0;
+        }
+
+        .door1 {
+            bottom: 0;
+            right: 20px;
+            width: 60px;
+            height: 100px;
+            background: #DA70D6; /* Orchid Purple - Level 1 */
+            border: 3px solid #BA55D3;
+        }
+
+        .door1-title {
+            bottom: 105px; /* Above door1 (100px + 5px gap) */
+            right: 20px;
+            width: 60px;
+            height: 25px;
+            background: #00CCCC;
+            border: 2px solid #00FFFF;
+            color: #000;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            line-height: 25px;
+            position: absolute;
+        }
+
+        .door2 {
+            bottom: 0;
+            right: 100px;
+            width: 60px;
+            height: 100px;
+            background: #00FFFF; /* Incandescent Cyan - Level 2 */
+            border: 3px solid #00CED1;
+        }
+
+        .door2-title {
+            bottom: 105px; /* Above door2 (100px + 5px gap) */
+            right: 100px;
+            width: 60px;
+            height: 25px;
+            background: #228B22;
+            border: 2px solid #32CD32;
+            color: #fff;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            line-height: 25px;
+            position: absolute;
+        }
+
+        .door3 {
+            bottom: 0;
+            right: 180px;
+            width: 60px;
+            height: 100px;
+            background: #FFFFE0; /* Light Yellow - Level 3 */
+            border: 3px solid #FFD700;
+        }
+
+        .door3-title {
+            bottom: 105px; /* Above door3 (100px + 5px gap) */
+            right: 180px;
+            width: 60px;
+            height: 25px;
+            background: #BA55D3;
+            border: 2px solid #DA70D6;
+            color: #fff;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            line-height: 25px;
+            position: absolute;
+        }
+
+        /* Platform above doors */
+        .upper-platform {
+            bottom: 150px;
+            right: 0;
+            width: 280px; /* Expanded for 60px doors */
+            height: 20px;
+            background: #808080;
+            border: 3px solid #606060;
+            position: absolute;
+            z-index: 4;
+        }
+
+        /* Upper doors */
+        .upper-door1 {
+            bottom: 170px;
+            right: 20px;
+            width: 60px; /* Same as bottom doors */
+            height: 100px; /* Same as bottom doors */
+            background: #32CD32; /* Lime Green - Level 4 */
+            border: 3px solid #228B22;
+            position: absolute;
+            z-index: 5;
+        }
+
+        .upper-door1-title {
+            bottom: 275px; /* Above upper door1 (100px + 5px gap) */
+            right: 20px;
+            width: 60px; /* Same as bottom titles */
+            height: 25px;
+            background: #FF1493;
+            border: 2px solid #FF69B4;
+            color: #fff;
+            text-align: center;
+            font-size: 24px; /* Same as bottom titles */
+            font-weight: bold;
+            line-height: 25px;
+            position: absolute;
+        }
+
+        .upper-door2 {
+            bottom: 170px;
+            right: 90px; /* Adjusted for 60px width */
+            width: 60px; /* Same as bottom doors */
+            height: 100px; /* Same as bottom doors */
+            background: #DDA0DD; /* Light Purple - Level 5 */
+            border: 3px solid #DA70D6;
+            position: absolute;
+            z-index: 5;
+        }
+
+        .upper-door2-title {
+            bottom: 275px; /* Above upper door2 (100px + 5px gap) */
+            right: 90px; /* Adjusted for 60px width */
+            width: 60px; /* Same as bottom titles */
+            height: 25px;
+            background: #008B8B;
+            border: 2px solid #00CED1;
+            color: #fff;
+            text-align: center;
+            font-size: 24px; /* Same as bottom titles */
+            font-weight: bold;
+            line-height: 25px;
+            position: absolute;
+        }
+
+        .upper-door3 {
+            bottom: 170px;
+            right: 160px; /* Adjusted for 60px width */
+            width: 60px; /* Same as bottom doors */
+            height: 100px; /* Same as bottom doors */
+            background: #DA70D6; /* Orchid Purple - Level 6 */
+            border: 3px solid #BA55D3;
+            position: absolute;
+            z-index: 5;
+        }
+
+        .upper-door3-title {
+            bottom: 275px; /* Above upper door3 (100px + 5px gap) */
+            right: 160px; /* Adjusted for 60px width */
+            width: 60px; /* Same as bottom titles */
+            height: 25px;
+            background: #B8860B;
+            border: 2px solid #FFD700;
+            color: #000;
+            text-align: center;
+            font-size: 24px; /* Same as bottom titles */
+            font-weight: bold;
+            line-height: 25px;
+            position: absolute;
+        }
+
+        .desk {
+            bottom: 0;
+            left: 200px;
+            width: 80px;
+            height: 40px;
+            background: #8B4513;
+            border: 3px solid #654321;
+        }
+
+        .plant {
+            bottom: 40px;
+            left: 230px;
+            width: 20px;
+            height: 30px;
+            background: #228B22;
+            border: 2px solid #006400;
+        }
+
+        .window {
+            top: 30px;
+            left: 50px;
+            width: 100px;
+            height: 80px;
+            background: #87CEEB;
+            border: 4px solid #4682B4;
+        }
+
+        .frame1 {
+            top: 20px;
+            left: 200px;
+            width: 60px;
+            height: 80px;
+            background: #FFD700;
+            border: 4px solid #B8860B;
+        }
+
+        .frame2 {
+            top: 40px;
+            left: 350px;
+            width: 80px;
+            height: 60px;
+            background: #FF6347;
+            border: 3px solid #DC143C;
+        }
+
+        .window {
+            top: 30px;
+            left: 50px;
+            width: 80px;
+            height: 60px;
+            background: #9370DB; /* Medium Purple */
+            border: 4px solid #FFE4B5; /* Moccasin */
+            border-radius: 0;
+        }
+
+        .window::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #FFE4B5; /* Moccasin */
+        }
+
+        .window::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            background: #FFE4B5; /* Moccasin */
+        }
+
+        .player {
+            position: absolute;
+            width: 96px;   /* Half of 192: 3x total from original */
+            height: 96px;  /* Half of 192: 3x total from original */
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0;
+            color: transparent;
+            cursor: move;
+            transition: none;
+            box-shadow: none;
+            border: none;
+            z-index: 10;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            background: #FFB6C1; /* Pastel light pink */
+            border: 3px solid #FFD700; /* Yellow border */
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            color: #DA70D6; /* Bright orchid purple */
+            max-width: 200px;
+            word-wrap: break-word;
+            z-index: 100;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #333;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid #fff;
+        }
+
+        .speech-bubble.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .player.jumping {
+            transition: none;
+        }
+
+        .chat-container {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        /* CHARACTER SELECTION STYLES - Windows 95 Retro Pink-Purple */
+        .character-screen {
+            background: linear-gradient(135deg, #E6E6FA, #DDA0DD);
+            border: 4px outset #FF69B4;
+            border-radius: 0;
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.5), inset 2px 2px 4px rgba(255,255,255,0.3);
+            font-family: 'MS Sans Serif', 'Courier New', monospace;
+            color: #8B008B;
+        }
+
+        .character-selection {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .character-option {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border: 3px outset #FF69B4;
+            background: #C0C0C0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'MS Sans Serif', monospace;
+            color: #8B008B;
+        }
+
+        .character-option:hover {
+            transform: scale(1.05);
+            border-color: #FF69B4;
+            box-shadow: 0 0 15px #FF69B4;
+            border-color: #DDA0DD;
+            box-shadow: 0 0 15px #DDA0DD;
+            background: #E6E6FA;
+        }
+
+        .character-option.selected {
+            border-color: #FF69B4;
+            box-shadow: 0 0 25px #FF69B4;
+            background: #DDA0DD;
+        }
+
+        .character-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .character-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            border-radius: 7px;
+        }
+
+        .character-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 24px;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: #4a5568;
+        }
+
+        .color-option.selected {
+            border-color: #2d3748;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        #chatMessages {
+            flex: 1;
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+            text-align: left;
+            background: #FFE0EC; /* Super light pink */
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            color: #DA70D6; /* Orchid text */
+            font-family: 'Courier New', monospace;
+        }
+
+        .message {
+            background: #e8f5e8;
+            padding: 0.5rem;
+            margin: 0.2rem 0;
+            border-radius: 5px;
+            text-align: left;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .chat-input input {
+            flex: 1;
+            margin: 0;
+        }
+
+        .status {
+            background: #f0f8ff;
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen active">
+            <h1>🎮 Vaporwhim Lounge</h1>
+            <div class="status">Step 1: Enter Room Details</div>
+            <div>
+                <input type="text" id="roomName" placeholder="Room Name" value="vapor">
+                <input type="password" id="roomPassword" placeholder="Room Password" value="whim">
+                <br><br>
+                <button onclick="handleJoinRoom()">Join Room</button>
+                <button onclick="handleCreateRoom()">Create Room</button>
+            </div>
+        </div>
+
+        <!-- Character Selection Screen -->
+        <div id="characterScreen" class="screen">
+            <h2>🎨 Choose Your Character (Required)</h2>
+            <div class="status">Step 2: Select Your Avatar</div>
+            
+            <div class="character-selection">
+                <!-- Character 1 - PINK ANGEL BABY -->
+                <div class="character-option" data-character="1">
+                    <img class="character-image" src="https://iili.io/qKAJc1S.png" alt="Pink Angel Baby">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Angel Baby</div>
+                </div>
+                
+                <!-- Character 2 - FROWNY MONSTER EMOJI -->
+                <div class="character-option" data-character="2">
+                    <img class="character-image" src="https://iili.io/qKA9Xyb.png" alt="Frowny Monster">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Frowny Monster</div>
+                </div>
+                
+                <!-- Character 3 - CHILL MOON FACE -->
+                <div class="character-option" data-character="3">
+                    <img class="character-image" src="https://iili.io/qKAJumG.png" alt="Chill Moon">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Chill Moon</div>
+                </div>
+                
+                <!-- Character 4 - DOG W SUNGLASSES -->
+                <div class="character-option" data-character="4">
+                    <img class="character-image" src="https://iili.io/qKA2nHX.png" alt="Cool Dog">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Cool Dog</div>
+                </div>
+                
+                <!-- Character 5 - CRYING HEART EYES -->
+                <div class="character-option" data-character="5">
+                    <img class="character-image" src="https://iili.io/qKuySpf.png" alt="Crying Heart">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Crying Heart</div>
+                </div>
+                
+                <!-- Character 6 - CRAZY THIRD EYE -->
+                <div class="character-option" data-character="6">
+                    <img class="character-image" src="https://iili.io/qKuyhLN.png" alt="Third Eye">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Third Eye</div>
+                </div>
+                
+                <!-- Character 7 - VARGAS GIRL -->
+                <div class="character-option" data-character="7">
+                    <img class="character-image" src="https://iili.io/qKA933F.png" alt="Vargas Girl">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Vargas Girl</div>
+                </div>
+                
+                <!-- Character 8 - DIVINE LADY -->
+                <div class="character-option" data-character="8">
+                    <img class="character-image" src="https://iili.io/qKuyPBS.png" alt="Divine Lady">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Divine Lady</div>
+                </div>
+                
+                <!-- Character 9 - CAT SMOKING -->
+                <div class="character-option" data-character="9">
+                    <img class="character-image" src="https://iili.io/qKuygI4.png" alt="Smoking Cat">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Smoking Cat</div>
+                </div>
+                
+                <!-- Character 10 - GLITCHY GIRL -->
+                <div class="character-option" data-character="10">
+                    <img class="character-image" src="https://iili.io/qKA9itR.png" alt="Glitchy Girl">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Glitchy Girl</div>
+                </div>
+                
+                <!-- Character 11 - CAT AND GREMLIN -->
+                <div class="character-option" data-character="11">
+                    <img class="character-image" src="https://iili.io/qKAHjUX.png" alt="Cat Gremlin">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Cat Gremlin</div>
+                </div>
+                
+                <!-- Character 12 - PIXEL CAT -->
+                <div class="character-option" data-character="12">
+                    <img class="character-image" src="https://iili.io/qKAdnZx.png" alt="Pixel Cat">
+                    <div class="character-glow"></div>
+                    <div class="character-name">Pixel Cat</div>
+                </div>
+            </div>
+            
+            <br>
+            <h3>✨ Choose Your Glow Color</h3>
+            <div class="color-palette" id="glowColors"></div>
+            
+            <br>
+            <h3>📝 Your Name</h3>
+            <input type="text" id="playerName" placeholder="Enter your name..." maxlength="15">
+            <br><br>
+            <button id="confirmCharacterBtn" onclick="confirmCharacter()" style="background: linear-gradient(45deg, #4CAF50, #45a049);">✅ Enter Lounge</button>
+            <div class="status">Choose a character and glow color to continue</div>
+        </div>
+
+        <!-- Lounge Screen -->
+        <div id="loungeScreen" class="screen">
+            <h2>🛋️ Lounge - Room: <span id="roomTitle">vapor</span></h2>
+            <div class="status">Step 3: Chat and Move Around</div>
+            
+            <div class="lounge-container">
+                <div class="lounge-area" id="loungeArea">
+                    <!-- Furniture -->
+                    <div class="furniture couch"></div>
+                    <div class="furniture table"></div>
+                    <div class="furniture plant"></div>
+                    <div class="furniture picture-frame"></div>
+                    <div class="furniture door door1"></div>
+                    <div class="door1-title">GAME</div>
+                    <div class="furniture door door2"></div>
+                    <div class="door2-title">SHOP</div>
+                    <div class="furniture door door3"></div>
+                    <div class="door3-title">EXIT</div>
+                    <div class="furniture window"></div>
+                    <div class="furniture desk"></div>
+                    <div class="furniture plant"></div>
+                    <div class="furniture frame1"></div>
+                    <div class="furniture frame2"></div>
+                    
+                    <!-- Upper level -->
+                    <div class="upper-platform"></div>
+                    <div class="upper-door1"></div>
+                    <div class="upper-door1-title">MAP</div>
+                    <div class="upper-door2"></div>
+                    <div class="upper-door2-title">VIP</div>
+                    <div class="upper-door3"></div>
+                    <div class="upper-door3-title">ADMIN</div>
+                    
+                    <!-- Player -->
+                    <div class="player" id="player" style="left: 200px; top: 200px;">😊</div>
+                </div>
+                
+                <div class="chat-container">
+                    <h3>💬 Chat</h3>
+                    <div id="chatMessages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
+                        <button onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+            
+            <br>
+            <button onclick="startGame()">🎮 Start Platformer Game</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen">
+            <h2>🎮 Platformer Game</h2>
+            <div class="status">Step 4: Play the Game!</div>
+            
+            <!-- Simple Score Display at Top -->
+            <div id="simpleScoreDisplay" style="
+                background: #B0E0E6;
+                padding: 8px 15px;
+                border-radius: 10px;
+                margin-bottom: 10px;
+                border: 2px solid #87CEEB;
+                color: #FF69B4;
+                font-weight: bold;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                font-family: 'Courier New', monospace;
+            ">
+                <div id="playerScoresSimple">
+                    <!-- Simple player scores will be added here -->
+                </div>
+            </div>
+            
+            <!-- Game Container with Flexbox Layout -->
+            <div style="display: flex; align-items: flex-start; gap: 20px;">
+                <!-- Left Side: Game Elements -->
+                <div>
+                    <canvas id="gameCanvas" width="900" height="500" style="background: #87CEEB; border: 8px solid #FF69B4; border-radius: 0;"></canvas>
+                    <br>
+                    <div id="gameScore">Score: 0</div>
+                    <br>
+                    <button onclick="backToLounge()">🔙 Back to Lounge</button>
+                </div>
+                
+                <!-- Right Side: Chat Box - Windows 95 Retro Pink-Purple -->
+                <div id="gameChatContainer" style="
+                    background: #E6E6FA;
+                    border: 3px inset #FF69B4;
+                    border-radius: 0;
+                    padding: 10px;
+                    box-shadow: 4px 4px 0px rgba(0,0,0,0.5), inset 1px 1px 2px rgba(255,255,255,0.3);
+                    z-index: 5;
+                    width: 250px;
+                    max-width: 250px;
+                    flex-shrink: 0;
+                    font-family: 'MS Sans Serif', monospace;
+                ">
+                <h3 style="margin: 0 0 10px 0; color: #8B008B; font-size: 24px; font-family: 'MS Sans Serif', monospace; text-shadow: 1px 1px 0px rgba(255,255,255,0.5);">💬 CHAT</h3>
+                <div id="gameChatMessages" style="
+                    height: 300px; 
+                    overflow-y: auto; 
+                    background: #C0C0C0; 
+                    border: 2px inset #FF69B4;
+                    padding: 8px;
+                    margin-bottom: 10px;
+                    font-size: 16px;
+                    font-family: 'MS Sans Serif', monospace;
+                    color: #8B008B;
+                ">
+                    <!-- Chat messages will appear here -->
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="gameChatInput" placeholder="Type a message..." 
+                           onkeypress="if(event.key==='Enter') sendGameChatMessage()" 
+                           style="
+                               flex: 1; 
+                               padding: 5px; 
+                               background: #C0C0C0;
+                               border: 2px inset #FF69B4;
+                               color: #8B008B;
+                               font-family: 'MS Sans Serif', monospace;
+                               font-size: 14px;
+                           ">
+                    <button onclick="sendGameChatMessage()" 
+                            style="
+                                padding: 5px 10px; 
+                                background: #C0C0C0;
+                                border: 3px outset #FF69B4;
+                                color: #8B008B;
+                                border-radius: 0;
+                                cursor: pointer;
+                                font-weight: bold;
+                                font-family: 'MS Sans Serif', monospace;
+                                font-size: 12px;
+                            ">SEND</button>
+                </div>
+                </div>
+            </div>
+            
+            <script>
+                // FLEXBOX CHAT - Properly positioned to right of game
+                // Chat stays in flex container to the right of game canvas
+            </script>
+        </div>
+    </div>
+
+    <script>
+        // Global game state
+        const gameState = {
+            roomName: 'vapor',
+            roomPassword: 'whim',
+            playerName: '',
+            playerAvatar: {
+                characterId: null,
+                imagePath: null,
+                characterName: null,
+                glowColor: '#FFD700' // Default gold glow
+            },
+            currentScreen: 'login'
+        };
+
+        // WebSocket connection
+        let ws = null;
+        let isConnected = false;
+
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket('ws://localhost:8082');
+                
+                ws.onopen = () => {
+                    console.log('Connected to server');
+                    isConnected = true;
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    handleServerMessage(data);
+                };
+                
+                ws.onclose = () => {
+                    console.log('Disconnected from server');
+                    isConnected = false;
+                    // Try to reconnect after 3 seconds
+                    setTimeout(connectWebSocket, 3000);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+                
+            } catch (error) {
+                console.error('Failed to connect to WebSocket:', error);
+            }
+        }
+
+        function handleServerMessage(data) {
+            console.log('Server message:', data.type);
+            switch (data.type) {
+                case 'createSuccess':
+                    console.log('Room created, you are host');
+                    break;
+                case 'createError':
+                    console.log('Room exists, joining instead');
+                    // If room already exists, join it
+                    sendToServer('joinRoom', {
+                        roomName: gameState.roomName,
+                        roomPassword: gameState.roomPassword,
+                        playerName: gameState.playerName,
+                        avatar: gameState.playerAvatar
+                    });
+                    break;
+                case 'joinSuccess':
+                    console.log('Joined room successfully');
+                    // Show existing players
+                    if (data.players && data.players.length > 0) {
+                        data.players.forEach(player => {
+                            if (player.name !== gameState.playerName) {
+                                console.log('Existing player:', player.name, 'at', player.x, player.y, 'with avatar:', player.avatar);
+                                updateOtherPlayerPosition(player.name, player.x, player.y, player.avatar);
+                            }
+                        });
+                    }
+                    break;
+                case 'joinError':
+                    console.log('Room does not exist, creating it');
+                    // If room doesn't exist, create it
+                    sendToServer('createRoom', {
+                        roomName: gameState.roomName,
+                        roomPassword: gameState.roomPassword,
+                        playerName: gameState.playerName,
+                        avatar: gameState.playerAvatar
+                    });
+                    break;
+                case 'playerJoined':
+                    console.log('NEW PLAYER:', data.player.name);
+                    addMessage('System', `${data.player.name} joined the lounge!`);
+                    // Show new player at their position with their avatar
+                    updateOtherPlayerPosition(data.player.name, data.player.x, data.player.y, data.player.avatar);
+                    break;
+                case 'chatMessage':
+                    console.log('CHAT:', data.author, ':', data.text);
+                    addMessage(data.author, data.text);
+                    break;
+                case 'gameChat':
+                    console.log('GAME CHAT:', data.playerName, ':', data.message);
+                    addGameChatMessage(data.playerName, data.message);
+                    break;
+                case 'playerLeft':
+                    console.log('PLAYER LEFT:', data.playerName);
+                    addMessage('System', `${data.playerName} left the lounge!`);
+                    // Remove other player element
+                    const otherPlayer = document.getElementById(`player-${data.playerName}`);
+                    if (otherPlayer) {
+                        otherPlayer.remove();
+                    }
+                    break;
+                case 'playerMove':
+                    // Update other player position
+                    if (data.playerName !== gameState.playerName) {
+                        updateOtherPlayerPosition(data.playerName, data.x, data.y, data.avatar);
+                    }
+                    break;
+                case 'gameStarted':
+                    console.log('Game started by:', data.playerName);
+                    addMessage('System', `🎮 ${data.playerName} started the platformer game! Joining now...`);
+                    showScreen('gameScreen');
+                    initMultiplayerGame();
+                    break;
+                case 'playerJoinedGame':
+                    console.log('Player joined game:', data.playerName);
+                    if (data.playerName !== gameState.playerName) {
+                        // Add other player to game state
+                        multiplayerGameState.players[data.playerName] = {
+                            x: data.x,
+                            y: data.y,
+                            vx: 0,
+                            vy: 0,
+                            width: 48,
+                            height: 48,
+                            speed: 5,
+                            jumpPower: 12,
+                            grounded: false,
+                            facing: 'right',
+                            characterId: data.avatar.characterId || 1,
+                            imagePath: data.avatar.imagePath || 'https://iili.io/qKAJc1S.png',
+                            glowColor: data.avatar.glowColor || '#FFD700',
+                            image: new Image(),
+                            imageLoaded: false,
+                            lives: 3,
+                            invulnerable: 0
+                        };
+                        
+                        // Load their character image
+                        const otherPlayer = multiplayerGameState.players[data.playerName];
+                        otherPlayer.image.crossOrigin = 'anonymous';
+                        otherPlayer.image.src = otherPlayer.imagePath;
+                        
+                        otherPlayer.image.onload = () => {
+                            otherPlayer.imageLoaded = true;
+                        };
+                    }
+                    break;
+                case 'gamePlayerMove':
+                    // Update other player position in game
+                    if (data.playerName !== gameState.playerName && multiplayerGameState.players[data.playerName]) {
+                        multiplayerGameState.players[data.playerName].x = data.x;
+                        multiplayerGameState.players[data.playerName].y = data.y;
+                        multiplayerGameState.players[data.playerName].facing = data.facing;
+                    }
+                    break;
+                case 'grabAction':
+                    // Sync grab state across all players
+                    if (data.grabs) {
+                        multiplayerGameState.grabs = data.grabs;
+                    }
+                    addMessage('System', data.message);
+                    break;
+                case 'collectItem':
+                    // Update collectible state from server
+                    if (data.gameState) {
+                        multiplayerGameState = data.gameState;
+                    }
+                    addMessage('System', `${data.playerName} collected ${data.itemId}! +${data.score} points`);
+                    break;
+                case 'itemCollected':
+                    // Sync item collection across all players
+                    const collectedItem = multiplayerGameState.collectibles.find(item => item.id === data.itemId);
+                    if (collectedItem && !collectedItem.collected) {
+                        collectedItem.collected = true;
+                        multiplayerGameState.globalScore += data.score;
+                        addMessage('System', `${data.playerName} collected ${data.itemId}! +${data.score} points`);
+                        
+                        // Special handling for key collection
+                        if (collectedItem.type === 'key') {
+                            multiplayerGameState.hasKey = true;
+                            multiplayerGameState.levelDoor.locked = false;
+                            addMessage('System', `🔑 ${data.playerName} found the KEY! The level door is now UNLOCKED!`);
+                        }
+                    }
+                    break;
+                case 'keyFound':
+                    // Update key status for all players
+                    multiplayerGameState.hasKey = true;
+                    multiplayerGameState.levelDoor.locked = false;
+                    addMessage('System', `🔑 ${data.playerName} found the KEY! The level door is now UNLOCKED!`);
+                    break;
+                case 'levelChange':
+                    // Update level for all players
+                    loadLevel(data.level);
+                    multiplayerGameState.levelDoor.locked = true;
+                    multiplayerGameState.hasKey = false;
+                    
+                    // Reset player positions
+                    Object.values(multiplayerGameState.players).forEach(player => {
+                        player.x = 100;
+                        player.y = 300;
+                        player.vx = 0;
+                        player.vy = 0;
+                    });
+                    
+                    addMessage('System', `🎉 Welcome to LEVEL ${data.level}! Find the key to unlock the next door!`);
+                    break;
+            }
+        }
+
+        function sendToServer(type, data) {
+            if (isConnected && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type, ...data }));
+            }
+        }
+
+        function updateOtherPlayerPosition(playerName, x, y, avatar) {
+            // Get or create other player element
+            let otherPlayer = document.getElementById(`player-${playerName}`);
+            if (!otherPlayer) {
+                otherPlayer = document.createElement('div');
+                otherPlayer.id = `player-${playerName}`;
+                otherPlayer.className = 'other-player';
+                otherPlayer.style.position = 'absolute';
+                otherPlayer.style.width = '96px';
+                otherPlayer.style.height = '96px';
+                otherPlayer.style.zIndex = '9';
+                otherPlayer.style.fontSize = '0';
+                otherPlayer.style.color = 'transparent';
+                otherPlayer.style.display = 'flex';
+                otherPlayer.style.alignItems = 'center';
+                otherPlayer.style.justifyContent = 'center';
+                
+                // Add name label
+                const nameLabel = document.createElement('div');
+                nameLabel.className = 'player-name-label';
+                nameLabel.style.position = 'absolute';
+                nameLabel.style.top = '-20px';
+                nameLabel.style.left = '0';
+                nameLabel.style.right = '0';
+                nameLabel.style.textAlign = 'center';
+                nameLabel.style.fontSize = '12px';
+                nameLabel.style.fontWeight = 'bold';
+                nameLabel.style.color = '#333';
+                nameLabel.textContent = playerName;
+                otherPlayer.appendChild(nameLabel);
+                
+                document.getElementById('loungeArea').appendChild(otherPlayer);
+            }
+            
+            // Draw character avatar if provided
+            if (avatar) {
+                drawPlayerCharacter(otherPlayer, avatar);
+            }
+            
+            // Update position
+            otherPlayer.style.left = x + 'px';
+            otherPlayer.style.top = y + 'px';
+        }
+
+        // Screen management - SIMPLE AND DIRECT
+        function showScreen(screenId) {
+            console.log('=== SWITCHING SCREEN ===');
+            console.log('From:', gameState.currentScreen);
+            console.log('To:', screenId);
+            
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+                console.log('Hiding screen:', screen.id);
+            });
+            
+            // Show target screen
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                console.log('Showing screen:', screenId);
+                gameState.currentScreen = screenId;
+                
+                // Fix ground level when entering lounge
+                if (screenId === 'loungeScreen') {
+                    setTimeout(fixGroundLevel, 100);
+                }
+            } else {
+                console.error('Screen not found:', screenId);
+            }
+            
+            console.log('Screen switch complete');
+            console.log('========================');
+        }
+
+        // Login handlers
+        function handleJoinRoom() {
+            console.log('Join room clicked');
+            const roomName = document.getElementById('roomName').value;
+            const roomPassword = document.getElementById('roomPassword').value;
+            
+            console.log('Room details:', roomName, roomPassword);
+            
+            if (roomName && roomPassword) {
+                gameState.roomName = roomName;
+                gameState.roomPassword = roomPassword;
+                console.log('Room validated, switching to character creation...');
+                showScreen('characterScreen');
+                initCharacterCreation();
+            } else {
+                alert('Please enter room name and password');
+            }
+        }
+
+        function handleCreateRoom() {
+            console.log('Create room clicked');
+            handleJoinRoom(); // Same logic for now
+        }
+
+        // Character selection
+        function initCharacterCreation() {
+            console.log('=== INITIALIZING CHARACTER SELECTION ===');
+            
+            // Set up character selection
+            const characterOptions = document.querySelectorAll('.character-option');
+            let selectedCharacter = null;
+            
+            characterOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    // Remove previous selection
+                    document.querySelectorAll('.character-option').forEach(opt => opt.classList.remove('selected'));
+                    
+                    // Add selection to clicked option
+                    option.classList.add('selected');
+                    selectedCharacter = option.dataset.character;
+                    
+                    // Update game state with character info
+                    gameState.playerAvatar = {
+                        characterId: selectedCharacter,
+                        imagePath: option.querySelector('.character-image').src,
+                        characterName: option.querySelector('.character-name').textContent,
+                        glowColor: gameState.playerAvatar.glowColor || '#FFD700' // Default gold glow
+                    };
+                    
+                    // Update selection box color to match glow
+                    updateSelectionBoxColor(gameState.playerAvatar.glowColor);
+                    
+                    console.log('Character selected:', gameState.playerAvatar);
+                });
+            });
+            
+            // Create glow color palette
+            const glowColorContainer = document.getElementById('glowColors');
+            const glowColors = ['#FFD700', '#FF69B4', '#00CED1', '#FF6347', '#9370DB', '#32CD32', '#FF4500', '#1E90FF'];
+            
+            glowColors.forEach(color => {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'color-option';
+                colorDiv.style.backgroundColor = color;
+                colorDiv.onclick = () => {
+                    console.log('Glow color selected:', color);
+                    gameState.playerAvatar.glowColor = color;
+                    document.querySelectorAll('#glowColors .color-option').forEach(opt => opt.classList.remove('selected'));
+                    colorDiv.classList.add('selected');
+                    
+                    // Update selection box color to match new glow
+                    updateSelectionBoxColor(color);
+                };
+                glowColorContainer.appendChild(colorDiv);
+            });
+            
+            // Initialize with default glow color
+            gameState.playerAvatar.glowColor = glowColors[0];
+            document.querySelector('#glowColors .color-option').classList.add('selected');
+            updateSelectionBoxColor(glowColors[0]);
+            
+            console.log('Character selection initialized');
+            console.log('================================');
+        }
+
+        function confirmCharacter() {
+            console.log('=== CONFIRMING CHARACTER ===');
+            const playerName = document.getElementById('playerName').value.trim();
+            
+            console.log('Player name:', playerName);
+            console.log('Avatar:', gameState.playerAvatar);
+            
+            if (playerName) {
+                gameState.playerName = playerName;
+                
+                // Try to join room first, if it doesn't exist then create it
+                sendToServer('joinRoom', {
+                    roomName: gameState.roomName,
+                    roomPassword: gameState.roomPassword,
+                    playerName: playerName,
+                    avatar: gameState.playerAvatar
+                });
+                
+                // Update lounge with player info
+                document.getElementById('roomTitle').textContent = gameState.roomName;
+                
+                // Draw pixel character on player element
+                const playerElement = document.getElementById('player');
+                drawPlayerCharacter(playerElement, gameState.playerAvatar);
+                
+                // Add welcome message
+                addMessage('System', `🎉 ${playerName} joined the lounge! Use arrow keys to move, SPACE to jump!`);
+                
+                console.log('Character confirmed, switching to lounge...');
+                showScreen('loungeScreen');
+                
+                // Start platformer physics
+                setTimeout(startLoungePhysics, 100);
+            } else {
+                alert('⚠️ Please enter your name to continue!');
+            }
+            console.log('============================');
+        }
+
+        // Lounge functions
+        function addMessage(author, text) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `<strong>${author}:</strong> ${text}`;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (message) {
+                // Add message to chat window locally
+                addMessage(gameState.playerName, message);
+                
+                // Send message through server
+                sendToServer('chatMessage', { text: message });
+                
+                // Show speech bubble locally
+                showSpeechBubble(message);
+                input.value = '';
+            }
+        }
+
+        function showSpeechBubble(message) {
+            const player = document.getElementById('player');
+            const loungeArea = document.getElementById('loungeArea');
+            
+            // Remove existing bubble if any
+            const existingBubble = document.querySelector('.speech-bubble');
+            if (existingBubble) {
+                existingBubble.remove();
+            }
+            
+            // Create new speech bubble
+            const bubble = document.createElement('div');
+            bubble.className = 'speech-bubble';
+            bubble.textContent = message;
+            
+            // Set bubble color to match character's glow color
+            const glowColor = gameState.playerAvatar && gameState.playerAvatar.glowColor ? gameState.playerAvatar.glowColor : '#000000';
+            bubble.style.borderColor = glowColor;
+            
+            loungeArea.appendChild(bubble);
+            
+            // Show bubble with animation
+            setTimeout(() => {
+                bubble.classList.add('active');
+            }, 50);
+            
+            // Hide bubble after 5 seconds
+            setTimeout(() => {
+                bubble.classList.remove('active');
+                setTimeout(() => {
+                    if (bubble.parentNode) {
+                        bubble.remove();
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Draw character on player element
+        function drawPlayerCharacter(playerElement, avatar) {
+            // Clear existing background and content
+            playerElement.style.background = '';
+            playerElement.innerHTML = '';
+            playerElement.style.boxShadow = '';
+            playerElement.style.border = '';
+            
+            if (avatar.characterId) {
+                // Use character image
+                const img = document.createElement('img');
+                img.src = avatar.imagePath;
+                img.style.width = '96px';
+                img.style.height = '96px';
+                img.style.imageRendering = 'pixelated';
+                img.style.imageRendering = '-moz-crisp-edges';
+                img.style.imageRendering = 'crisp-edges';
+                playerElement.appendChild(img);
+                
+                // Add glow effect that follows image shape (using filter)
+                if (avatar.glowColor) {
+                    img.style.filter = `drop-shadow(0 0 15px ${avatar.glowColor}) drop-shadow(0 0 30px ${avatar.glowColor})`;
+                }
+            } else {
+                // Fallback to pixel art drawing
+                const canvas = document.createElement('canvas');
+                canvas.width = 96;   /* 3x bigger: 32 * 3 */
+                canvas.height = 96;  /* 3x bigger: 32 * 3 */
+                const ctx = canvas.getContext('2d');
+                
+                // Scale up from 64x64 to 96x96 (1.5x)
+                const scale = 1.5;
+                
+                // Body
+                ctx.fillStyle = avatar.bodyColor || '#4CAF50';
+                ctx.fillRect(24 * scale, 32 * scale, 16 * scale, 20 * scale); // Body
+                ctx.fillRect(20 * scale, 20 * scale, 24 * scale, 16 * scale); // Head
+                
+                // Eyes
+                ctx.fillStyle = avatar.eyeColor || '#000000';
+                ctx.fillRect(26 * scale, 24 * scale, 4 * scale, 4 * scale); // Left eye
+                ctx.fillRect(34 * scale, 24 * scale, 4 * scale, 4 * scale); // Right eye
+                
+                // Legs
+                ctx.fillStyle = avatar.bodyColor || '#4CAF50';
+                ctx.fillRect(26 * scale, 52 * scale, 4 * scale, 8 * scale); // Left leg
+                ctx.fillRect(34 * scale, 52 * scale, 4 * scale, 8 * scale); // Right leg
+                
+                // Arms
+                ctx.fillRect(18 * scale, 32 * scale, 4 * scale, 12 * scale); // Left arm
+                ctx.fillRect(42 * scale, 32 * scale, 4 * scale, 12 * scale); // Right arm;
+                
+                // Set as background
+                playerElement.style.background = `url(${canvas.toDataURL()})`;
+                playerElement.style.backgroundSize = 'cover';
+                playerElement.style.backgroundRepeat = 'no-repeat';
+                
+                // Add glow effect for pixel art too
+                if (avatar.glowColor) {
+                    playerElement.style.filter = `drop-shadow(0 0 15px ${avatar.glowColor}) drop-shadow(0 0 30px ${avatar.glowColor})`;
+                }
+            }
+            
+            console.log('Character drawn with shape glow:', avatar);
+        }
+
+        // Player movement with STANDARD PLATFORMER physics
+        let playerX = 200, playerY = 200;
+        let playerVelocityX = 0, playerVelocityY = 0;
+        let isJumping = false;
+        let gravity = 0.8;           // Standard platformer gravity
+        let jumpPower = -20;         // HIGHER jump capacity!
+        let moveSpeed = 10;          // Fast but controllable
+        let airControl = 0.5;        // Standard air control
+        let groundLevel = 400;       // Will be updated dynamically!
+
+        // Fix ground level when lounge loads
+        function fixGroundLevel() {
+            const loungeArea = document.getElementById('loungeArea');
+            if (loungeArea) {
+                groundLevel = loungeArea.offsetHeight - 100; // Leave space for player height
+                console.log('Ground level fixed to:', groundLevel);
+            }
+        }
+
+        function updatePlayerPhysics() {
+            if (gameState.currentScreen !== 'loungeScreen') return;
+            
+            const player = document.getElementById('player');
+            const loungeArea = document.getElementById('loungeArea');
+            
+            // Apply gravity (only when in air)
+            if (playerY < groundLevel) {
+                playerVelocityY += gravity;
+            }
+            
+            // Update position
+            playerX += playerVelocityX;
+            playerY += playerVelocityY;
+            
+            // Ground collision with fun bounce
+            if (playerY >= groundLevel) {
+                playerY = groundLevel;
+                if (playerVelocityY > 4) {
+                    playerVelocityY = -playerVelocityY * 0.2; // Fun little bounce!
+                } else {
+                    playerVelocityY = 0;
+                }
+                isJumping = false;
+                player.classList.remove('jumping');
+            }
+            
+            // Wall boundaries
+            const maxX = loungeArea.offsetWidth - 96; // 96 = player width
+            playerX = Math.max(0, Math.min(maxX, playerX));
+            
+            // GAME door proximity check - trigger with UP ARROW!
+            const gameDoor = document.querySelector('.door1');
+            let nearGameDoor = false;
+            if (gameDoor) {
+                const doorRect = gameDoor.getBoundingClientRect();
+                const loungeRect = loungeArea.getBoundingClientRect();
+                const doorRelative = {
+                    left: doorRect.left - loungeRect.left,
+                    right: doorRect.right - loungeRect.left,
+                    top: doorRect.top - loungeRect.top,
+                    bottom: doorRect.bottom - loungeRect.top
+                };
+                
+                // Check if player is near the GAME door (within 50px)
+                const distance = Math.abs((playerX + 48) - (doorRelative.left + doorRelative.right) / 2);
+                if (distance < 50 && Math.abs(playerY - doorRelative.top) < 100) {
+                    nearGameDoor = true;
+                    
+                    // Show提示 message
+                    if (!document.getElementById('doorHint')) {
+                        const hint = document.createElement('div');
+                        hint.id = 'doorHint';
+                        hint.style.position = 'absolute';
+                        hint.style.top = (doorRelative.top - 30) + 'px';
+                        hint.style.left = (doorRelative.left - 20) + 'px';
+                        hint.style.width = '100px';
+                        hint.style.height = '20px';
+                        hint.style.fontSize = '12px';
+                        hint.style.textAlign = 'center';
+                        hint.style.color = '#FFD700';
+                        hint.style.fontWeight = 'bold';
+                        hint.style.zIndex = '100';
+                        hint.textContent = '↑ UP ARROW TO START';
+                        loungeArea.appendChild(hint);
+                    }
+                } else {
+                    // Remove hint if not near door
+                    const hint = document.getElementById('doorHint');
+                    if (hint) {
+                        hint.remove();
+                    }
+                }
+            }
+            
+            // Store nearGameDoor for keyboard handler
+            window.nearGameDoor = nearGameDoor;
+            
+            // Ceiling collision
+            if (playerY < 0) {
+                playerY = 0;
+                playerVelocityY = 0;
+            }
+            
+            // Couch collision - JUMPABLE!
+            const couch = document.querySelector('.couch');
+            if (couch) {
+                const couchRect = couch.getBoundingClientRect();
+                const loungeRect = loungeArea.getBoundingClientRect();
+                const playerRect = {
+                    left: playerX,
+                    right: playerX + 96,
+                    top: playerY,
+                    bottom: playerY + 96
+                };
+                
+                const couchRelative = {
+                    left: couchRect.left - loungeRect.left,
+                    right: couchRect.right - loungeRect.left,
+                    top: couchRect.top - loungeRect.top,
+                    bottom: couchRect.bottom - loungeRect.top
+                };
+                
+                // Normal platformer collision
+                if (playerRect.right > couchRelative.left && 
+                    playerRect.left < couchRelative.right &&
+                    playerRect.bottom > couchRelative.top && 
+                    playerRect.top < couchRelative.bottom) {
+                    
+                    // Landing on top of couch
+                    if (playerVelocityY > 0 && playerRect.bottom - couchRelative.top < 20 && playerY < couchRelative.top) {
+                        playerY = couchRelative.top - 96;
+                        playerVelocityY = 0;
+                        isJumping = false;
+                    }
+                    // Hitting from below
+                    else if (playerVelocityY < 0 && playerRect.top < couchRelative.bottom && playerY > couchRelative.top - 20) {
+                        playerY = couchRelative.bottom;
+                        playerVelocityY = 0;
+                    }
+                    // Hitting from left
+                    else if (playerVelocityX > 0 && playerRect.right - couchRelative.left < 20 && playerX < couchRelative.left) {
+                        playerX = couchRelative.left - 96;
+                        playerVelocityX = 0;
+                    }
+                    // Hitting from right
+                    else if (playerVelocityX < 0 && couchRelative.right - playerRect.left < 20 && playerX > couchRelative.right - 96) {
+                        playerX = couchRelative.right;
+                        playerVelocityX = 0;
+                    }
+                }
+            }
+
+            // Upper platform collision - JUMPABLE!
+            const upperPlatform = document.querySelector('.upper-platform');
+            if (upperPlatform) {
+                const platformRect = upperPlatform.getBoundingClientRect();
+                const loungeRect = loungeArea.getBoundingClientRect();
+                const playerRect = {
+                    left: playerX,
+                    right: playerX + 96,
+                    top: playerY,
+                    bottom: playerY + 96
+                };
+                
+                const platformRelative = {
+                    left: platformRect.left - loungeRect.left,
+                    right: platformRect.right - loungeRect.left,
+                    top: platformRect.top - loungeRect.top,
+                    bottom: platformRect.bottom - loungeRect.top
+                };
+                
+                // Platform collision
+                if (playerRect.right > platformRelative.left && 
+                    playerRect.left < platformRelative.right &&
+                    playerRect.bottom > platformRelative.top && 
+                    playerRect.top < platformRelative.bottom) {
+                    
+                    // Landing on top of platform
+                    if (playerVelocityY > 0 && playerRect.bottom - platformRelative.top < 20 && playerY < platformRelative.top) {
+                        playerY = platformRelative.top - 96;
+                        playerVelocityY = 0;
+                        isJumping = false;
+                    }
+                    // Hitting from below
+                    else if (playerVelocityY < 0 && playerRect.top < platformRelative.bottom && playerY > platformRelative.top - 20) {
+                        playerY = platformRelative.bottom;
+                        playerVelocityY = 0;
+                    }
+                    // Hitting from left
+                    else if (playerVelocityX > 0 && playerRect.right - platformRelative.left < 20 && playerX < platformRelative.left) {
+                        playerX = platformRelative.left - 96;
+                        playerVelocityX = 0;
+                    }
+                    // Hitting from right
+                    else if (playerVelocityX < 0 && platformRelative.right - playerRect.left < 20 && playerX > platformRelative.right - 96) {
+                        playerX = platformRelative.right;
+                        playerVelocityX = 0;
+                    }
+                }
+            }
+            
+            // Apply fun friction
+            if (playerY >= groundLevel) {
+                playerVelocityX *= 0.85; // Good ground friction
+            } else {
+                playerVelocityX *= 0.95; // Air control
+            }
+            
+            // Update player position
+            player.style.left = playerX + 'px';
+            player.style.top = playerY + 'px';
+            
+            // Update speech bubble position if exists - SIMPLE METHOD!
+            const bubble = document.querySelector('.speech-bubble');
+            if (bubble) {
+                bubble.style.left = (playerX + 48) + 'px'; // Center of player (96/2)
+                bubble.style.top = (playerY - 60) + 'px'; // 60px above player
+            }
+            
+            // Send position to server
+            sendToServer('playerMove', {
+                x: playerX,
+                y: playerY,
+                vx: playerVelocityX,
+                vy: playerVelocityY
+            });
+            
+            // Continue physics loop
+            requestAnimationFrame(updatePlayerPhysics);
+        }
+
+        // Keyboard controls
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            
+            // Jump only when on ground
+            if (e.key === ' ' && !isJumping && gameState.currentScreen === 'loungeScreen') {
+                playerVelocityY = jumpPower;
+                isJumping = true;
+                document.getElementById('player').classList.add('jumping');
+            }
+            
+            // Start multiplayer game with UP ARROW when near GAME door
+            if (e.key === 'ArrowUp' && window.nearGameDoor && gameState.currentScreen === 'loungeScreen') {
+                console.log('UP ARROW pressed near GAME door - starting multiplayer game!');
+                startMultiplayerGame();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Movement update - OPTIMIZED!
+        function updateMovement() {
+            if (gameState.currentScreen !== 'loungeScreen') return;
+            
+            // Standard platformer movement
+            if (keys['ArrowLeft']) {
+                if (playerY >= groundLevel) {
+                    playerVelocityX = Math.max(-moveSpeed, playerVelocityX - 1.5); // Ground acceleration
+                } else {
+                    playerVelocityX = Math.max(-moveSpeed * airControl, playerVelocityX - 0.8); // Air control
+                }
+            } else if (keys['ArrowRight']) {
+                if (playerY >= groundLevel) {
+                    playerVelocityX = Math.min(moveSpeed, playerVelocityX + 1.5); // Ground acceleration
+                } else {
+                    playerVelocityX = Math.min(moveSpeed * airControl, playerVelocityX + 0.8); // Air control
+                }
+            }
+            
+            // Optimized: Only continue if still in lounge
+            if (gameState.currentScreen === 'loungeScreen') {
+                requestAnimationFrame(updateMovement);
+            }
+        }
+
+        // Start physics when entering lounge
+        function startLoungePhysics() {
+            playerX = 200;
+            playerY = 100;
+            playerVelocityX = 0;
+            playerVelocityY = 0;
+            isJumping = false;
+            
+            updatePlayerPhysics();
+            updateMovement();
+        }
+
+        // Multiplayer game state
+        let multiplayerGameState = {
+            platforms: [],
+            collectibles: [],
+            enemies: [],
+            players: {},
+            gameStarted: false,
+            globalScore: 0
+        };
+
+        // Game functions
+        function startMultiplayerGame() {
+            console.log('=== STARTING MULTIPLAYER PLATFORMER ===');
+            
+            // Initialize multiplayer game state
+            if (!multiplayerGameState.gameStarted) {
+                initializeMultiplayerGame();
+            }
+            
+            // Notify all players that game is starting
+            sendToServer('startGame', {
+                playerName: gameState.playerName
+            });
+            
+            // Start game locally
+            showScreen('gameScreen');
+            initMultiplayerGame();
+            
+            // Add system message
+            addMessage('System', `🎮 ${gameState.playerName} started the platformer game!`);
+        }
+
+        // Asset cache for faster loading
+        const assetCache = {
+            images: {},
+            loaded: false
+        };
+
+        // Preload critical assets
+        function preloadAssets() {
+            console.log('🔄 Preloading critical game assets...');
+            
+            const criticalAssets = [
+                'https://iili.io/qKAHs5u.png', // Platform ground
+                'https://iili.io/qKA9itR.png', // Joy coin
+                'https://iili.io/qqFivHJ.png', // Heart sparkle
+                'https://iili.io/qKAdNtf.png', // Raspberry
+                'https://iili.io/qKA2zDG.png', // Ice cream
+                'https://iili.io/qKAdgS9.png', // Rocket speed
+                'https://iili.io/qqFgsse.png', // Violin key
+                'https://iili.io/qKAHjUX.png', // Cat gremlin
+                'https://iili.io/qKA9Xyb.png', // Frowny monster
+                'https://iili.io/qKAJumG.png', // Chill moon NPC
+                'https://iili.io/qKAJ3mJ.png', // Holo flower
+                'https://iili.io/qKAdUc7.png', // Halo invincibility
+                'https://iili.io/qKA9CjR.png', // Cupcake
+                'https://iili.io/qKA2J4V.png', // Pink mountain background
+                'https://iili.io/qKA2z1B.png', // Green glitchy background
+                'https://iili.io/qKA2xtp.png'  // Pink crystal background
+            ];
+
+            let loadedCount = 0;
+            
+            criticalAssets.forEach(url => {
+                if (!assetCache.images[url]) {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.src = url;
+                    assetCache.images[url] = img;
+                    
+                    img.onload = () => {
+                        loadedCount++;
+                        console.log(`✅ Asset loaded: ${url} (${loadedCount}/${criticalAssets.length})`);
+                        if (loadedCount === criticalAssets.length) {
+                            assetCache.loaded = true;
+                            console.log('🎉 All critical assets loaded successfully!');
+                        }
+                    };
+                    
+                    img.onerror = () => {
+                        console.log(`❌ Failed to load asset: ${url}`);
+                        loadedCount++;
+                        if (loadedCount === criticalAssets.length) {
+                            assetCache.loaded = true;
+                            console.log('⚠️ Asset loading completed with some errors');
+                        }
+                    };
+                } else {
+                    loadedCount++;
+                }
+            });
+        }
+
+        function getScoreLeader() {
+            const scores = Object.entries(multiplayerGameState.playerScores);
+            if (scores.length === 0) return null;
+            
+            return scores.reduce((leader, [name, score]) => {
+                return !leader || score.totalScore > leader.totalScore ? 
+                    {name, ...score} : leader;
+            }, null);
+        }
+
+        // Simple score display function
+        function updateSimpleScoreDisplay() {
+            const scoresDiv = document.getElementById('playerScoresSimple');
+            if (!scoresDiv) return;
+            
+            scoresDiv.innerHTML = '';
+            
+            // Show all players in a simple format with bright colors
+            Object.entries(multiplayerGameState.playerScores || {}).forEach(([playerName, scoreData]) => {
+                const scoreText = `<span style="color: #DA70D6; margin: 0 10px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">${playerName}: <img src="https://iili.io/qqFivHJ.png" style="width: 16px; height: 16px; vertical-align: middle;">${scoreData.hearts || 0} <img src="https://iili.io/qKA9itR.png" style="width: 16px; height: 16px; vertical-align: middle;">${scoreData.joycoins || 0} <img src="https://iili.io/qKAdNtf.png" style="width: 16px; height: 16px; vertical-align: middle;">${scoreData.treasures || 0}</span>`;
+                scoresDiv.innerHTML += scoreText;
+            });
+        }
+
+        // Show end-of-level scoreboard with working Next Level button
+        function showLevelScoreboard() {
+            const scores = Object.entries(multiplayerGameState.playerScores || {});
+            if (scores.length === 0) return;
+            
+            // Find winners
+            const sortedByJoy = [...scores].sort((a, b) => (b[1].joycoins || 0) - (a[1].joycoins || 0));
+            const sortedByHearts = [...scores].sort((a, b) => (b[1].hearts || 0) - (a[1].hearts || 0));
+            const sortedByTreasures = [...scores].sort((a, b) => (b[1].treasures || 0) - (a[1].treasures || 0));
+            
+            const joyWinner = sortedByJoy[0];
+            const heartWinner = sortedByHearts[0];
+            const treasureWinner = sortedByTreasures[0];
+            
+            // Create scoreboard popup with Windows 95 retro pink-purple vibe
+            const scoreboard = document.createElement('div');
+            scoreboard.id = 'levelScoreboard';
+            scoreboard.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #E6E6FA, #DDA0DD);
+                border: 4px outset #FF69B4;
+                border-radius: 0;
+                padding: 30px;
+                box-shadow: 8px 8px 0px rgba(0,0,0,0.5), inset 2px 2px 4px rgba(255,255,255,0.3);
+                z-index: 1000;
+                font-family: 'MS Sans Serif', 'Courier New', monospace;
+                font-weight: bold;
+                color: #8B008B;
+                text-align: center;
+                min-width: 450px;
+            `;
+            
+            scoreboard.innerHTML = `
+                <h2 style="margin: 0 0 20px 0; font-size: 28px;">Level ${multiplayerGameState.currentLevel} Complete!</h2>
+                <div style="font-size: 22px; margin-bottom: 15px;">
+                    <img src="https://iili.io/qKA9itR.png" style="width: 24px; height: 24px; vertical-align: middle;"> ${joyWinner[0]} collected the most JOY!
+                <h2 style="margin: 0 0 20px 0; font-size: 24px; font-family: 'MS Sans Serif', monospace; color: #8B008B; text-shadow: 1px 1px 0px rgba(255,255,255,0.5);">🎉 LEVEL ${multiplayerGameState.currentLevel} COMPLETE! 🎉</h2>
+                <div style="font-size: 18px; margin-bottom: 15px; color: #4B0082;">
+                    <img src="https://iili.io/qKA9itR.png" style="width: 20px; height: 20px; vertical-align: middle;"> ${joyWinner[0]} collected most JOY!
+                </div>
+                <div style="font-size: 16px; margin-bottom: 20px; color: #4B0082;">
+                    <img src="https://iili.io/qKAdNtf.png" style="width: 20px; height: 20px; vertical-align: middle;"> Most Treasures: ${treasureWinner[0]} with ${treasureWinner[1].treasures || 0}!
+                </div>
+                <button onclick="goToNextLevelFromScoreboard()" style="
+                    background: #C0C0C0;
+                    color: #000080;
+                    border: 3px outset #FFFFFF;
+                    padding: 8px 16px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    margin-right: 10px;
+                    font-family: 'MS Sans Serif', monospace;
+                    font-size: 14px;
+                ">▶ NEXT LEVEL</button>
+                <button onclick="removeScoreboard()" style="
+                    background: #C0C0C0;
+                    color: #000080;
+                    border: 3px outset #FFFFFF;
+                    padding: 8px 16px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    font-family: 'MS Sans Serif', monospace;
+                    font-size: 14px;
+                ">✖ CONTINUE</button>
+            `;
+            
+            document.body.appendChild(scoreboard);
+        }
+        
+        // Function to advance to next level from scoreboard
+        function goToNextLevelFromScoreboard() {
+            console.log('=== ADVANCING TO NEXT LEVEL FROM SCOREBOARD ===');
+            
+            // Remove scoreboard
+            removeScoreboard();
+            
+            // Advance to next level
+            multiplayerGameState.currentLevel++;
+            
+            // Reset player positions
+            Object.values(multiplayerGameState.players).forEach(player => {
+                player.x = 100;
+                player.y = 300;
+                player.vx = 0;
+                player.vy = 0;
+            });
+            
+            // Load level-specific content
+            loadLevel(multiplayerGameState.currentLevel);
+            
+            // Lock the door again for next level
+            multiplayerGameState.levelDoor.locked = true;
+            multiplayerGameState.hasKey = false;
+            
+            addMessage('System', `🎉 Welcome to LEVEL ${multiplayerGameState.currentLevel}! Find the key to unlock the next door!`);
+            
+            // Notify all players about level change
+            sendToServer('levelChange', {
+                level: multiplayerGameState.currentLevel
+            });
+        }
+        
+        // Function to remove scoreboard
+        function removeScoreboard() {
+            const scoreboard = document.getElementById('levelScoreboard');
+            if (scoreboard) {
+                scoreboard.remove();
+            }
+        }
+
+        function initializeMultiplayerGame() {
+            console.log('Initializing multiplayer game state...');
+            
+            // Preload assets for faster loading
+            preloadAssets();
+            
+            // Preload background images
+            preloadBackgrounds();
+            
+            // Initialize shared game objects
+            multiplayerGameState.platforms = [
+                {x: 0, y: 450, width: 900, height: 50, color: '#8B4513', type: 'ground',
+                 imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Ground'},
+                {x: 100, y: 380, width: 120, height: 20, color: '#654321', type: 'normal',
+                 imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                {x: 300, y: 320, width: 100, height: 20, color: '#654321', type: 'normal',
+                 imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                {x: 450, y: 280, width: 80, height: 20, color: '#654321', type: 'moving', moveX: 450, moveRange: 100, moveSpeed: 1,
+                 imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Moving'},
+                {x: 600, y: 350, width: 120, height: 20, color: '#654321', type: 'normal',
+                 imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                {x: 50, y: 200, width: 80, height: 20, color: '#654321', type: 'normal',
+                 imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                {x: 750, y: 250, width: 100, height: 20, color: '#654321', type: 'normal',
+                 imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                {x: 200, y: 150, width: 60, height: 20, color: '#654321', type: 'falling', triggered: false,
+                 imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Falling'}
+            ];
+            
+            multiplayerGameState.collectibles = [
+                // Heart Sparkles (coins)
+                {x: 150, y: 350, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 10, id: 'coin1',
+                 imagePath: 'https://iili.io/qqFivHJ.png', itemType: 'Heart Sparkle 1'},
+                {x: 350, y: 290, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 10, id: 'coin2',
+                 imagePath: 'https://iili.io/qqFiSNR.png', itemType: 'Heart Sparkle 2'},
+                {x: 650, y: 320, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 10, id: 'coin3',
+                 imagePath: 'https://iili.io/qqFieSa.png', itemType: 'Heart Sparkle 3'},
+                
+                // Joy Coins (new special coins)
+                {x: 250, y: 400, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 25, id: 'joycoin1',
+                 imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                {x: 450, y: 250, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 25, id: 'joycoin2',
+                 imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                {x: 550, y: 350, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 25, id: 'joycoin3',
+                 imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                
+                // Treasures (gems and powerups)
+                {x: 80, y: 170, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 25, id: 'gem1',
+                 imagePath: 'https://iili.io/qKAdNtf.png', itemType: 'Raspberry'},
+                {x: 800, y: 220, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 25, id: 'gem2',
+                 imagePath: 'https://iili.io/qKA2zDG.png', itemType: 'Ice Cream'},
+                {x: 230, y: 120, size: 40, collected: false, color: '#00FF00', type: 'powerup', value: 50, effect: 'speed', id: 'powerup1',
+                 imagePath: 'https://iili.io/qKAdgS9.png', itemType: 'Rocket Speed'},
+                
+                // NEW: Key collectible with Violin Angel
+                {x: 400, y: 100, size: 40, collected: false, color: '#FFD700', type: 'key', value: 100, id: 'levelKey',
+                 imagePath: 'https://iili.io/qqFgsse.png', itemType: 'Violin Angel Key'}
+            ];
+            
+            multiplayerGameState.enemies = [
+                {x: 300, y: 430, width: 30, height: 30, vx: 2, vy: 0, color: '#FF0000', type: 'walker', patrol: {start: 250, end: 400}, id: 'enemy1', grounded: true,
+                 imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                {x: 600, y: 430, width: 30, height: 30, vx: -1.5, vy: 0, color: '#FF0000', type: 'walker', patrol: {start: 550, end: 700}, id: 'enemy2', grounded: true,
+                 imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                {x: 500, y: 250, width: 25, height: 25, vx: 0, vy: 0, color: '#FF00FF', type: 'jumper', jumpTimer: 0, id: 'enemy3',
+                 imagePath: 'https://iili.io/qKA9Xyb.png', characterType: 'Frowny Monster'}
+            ];
+            
+            // NEW: NPC system with cute characters and dialogue
+            multiplayerGameState.npcs = [
+                {x: 250, y: 400, width: 30, height: 30, id: 'npc1', name: 'Chill Moon',
+                 imagePath: 'https://iili.io/qKAJumG.png', dialogue: [
+                     "Hey there! Welcome to the level! 🌙",
+                     "Find the key to unlock the door!",
+                     "Watch out for those grumpy cat gremlins!",
+                     "You're doing great! Keep going!"
+                 ], currentDialogue: 0, dialogueTimer: 0},
+                {x: 650, y: 400, width: 30, height: 30, id: 'npc2', name: 'Cool Dog',
+                 imagePath: 'https://iili.io/qKA2nHX.png', dialogue: [
+                     "Yo! What's up? 🕶️",
+                     "Collect those heart sparkles!",
+                     "The violin angel key is somewhere up high...",
+                     "You got this! Go get 'em!"
+                 ], currentDialogue: 0, dialogueTimer: 60}
+            ];
+            
+            // NEW: Player score tracking for competition
+            multiplayerGameState.playerScores = {};
+            multiplayerGameState.totalCoins = 0;
+            multiplayerGameState.totalTreasures = 0;
+            
+            // NEW: Level door system
+            multiplayerGameState.levelDoor = {
+                x: 850,
+                y: 380,
+                width: 40,
+                height: 70,
+                locked: true,
+                color: '#DA70D6', // Orchid Purple when locked - NO MORE BROWN!
+                unlockedColor: '#FFD700', // Gold when unlocked
+                level: 2
+            };
+            
+            multiplayerGameState.currentLevel = 1;
+            multiplayerGameState.hasKey = false;
+            multiplayerGameState.gameStarted = true;
+            multiplayerGameState.globalScore = 0;
+            
+            // NEW: Grab system state tracking
+            multiplayerGameState.grabs = {}; // Track who is grabbing whom
+            multiplayerGameState.grabRange = 50; // Distance needed to grab
+            
+            console.log('Multiplayer game state initialized with key-door system and grab mechanics');
+        }
+
+        function initMultiplayerGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            console.log('=== INITIALIZING MULTIPLAYER PLATFORMER ===');
+            console.log('Player avatar data:', gameState.playerAvatar);
+            
+            // Set canvas size
+            canvas.width = 900;
+            canvas.height = 500;
+            
+            // ALWAYS initialize game state if not already done
+            if (!multiplayerGameState.gameStarted || multiplayerGameState.platforms.length === 0) {
+                initializeMultiplayerGame();
+            }
+            
+            // Add current player to multiplayer game state
+            multiplayerGameState.players[gameState.playerName] = {
+                x: 100,
+                y: 300,
+                vx: 0,
+                vy: 0,
+                width: 48,
+                height: 48,
+                speed: 5,
+                jumpPower: 12,
+                grounded: false,
+                facing: 'right',
+                characterId: gameState.playerAvatar.characterId || 1,
+                imagePath: gameState.playerAvatar.imagePath || 'https://iili.io/qKAJc1S.png',
+                glowColor: gameState.playerAvatar.glowColor || '#FFD700',
+                image: new Image(),
+                imageLoaded: false,
+                lives: 3,
+                invulnerable: 0
+            };
+            
+            // Load character image
+            const player = multiplayerGameState.players[gameState.playerName];
+            player.image.crossOrigin = 'anonymous';
+            player.image.src = player.imagePath;
+            
+            player.image.onload = () => {
+                player.imageLoaded = true;
+                console.log('✅ Multiplayer character image loaded!');
+            };
+            
+            // Notify server we're ready
+            sendToServer('playerJoinedGame', {
+                playerName: gameState.playerName,
+                x: player.x,
+                y: player.y,
+                avatar: gameState.playerAvatar
+            });
+            
+            // Start multiplayer game loop
+            multiplayerGameLoop();
+        }
+
+        function multiplayerGameLoop() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!document.getElementById('gameScreen').classList.contains('active')) {
+                return;
+            }
+            
+            // Clear canvas with sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#98D8E8');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Update and draw shared game objects
+            updateMultiplayerGameObjects();
+            drawMultiplayerGameObjects(ctx);
+            
+            // Update and draw all players
+            updateLocalPlayer();
+            drawAllPlayers(ctx);
+            
+            // Update UI
+            document.getElementById('gameScore').textContent = `Global Score: ${multiplayerGameState.globalScore} | Players: ${Object.keys(multiplayerGameState.players).length}`;
+            
+            // Continue game loop
+            requestAnimationFrame(multiplayerGameLoop);
+        }
+
+        function updateLocalPlayer() {
+            const player = multiplayerGameState.players[gameState.playerName];
+            if (!player) return;
+            
+            // Apply physics
+            player.vy += 0.6; // gravity
+            player.vx *= 0.9; // friction
+            
+            // Handle input
+            if (keys['ArrowLeft']) {
+                player.vx = Math.max(-player.speed, player.vx - 0.5);
+                player.facing = 'left';
+            }
+            if (keys['ArrowRight']) {
+                player.vx = Math.min(player.speed, player.vx + 0.5);
+                player.facing = 'right';
+            }
+            if (keys[' '] && player.grounded) {
+                player.vy = -player.jumpPower;
+                player.grounded = false;
+            }
+            
+            // Handle grab mechanics
+            if (keys['g'] || keys['G']) {
+                // Check if player is currently grabbing someone
+                if (multiplayerGameState.grabs[gameState.playerName]) {
+                    // Release the grab
+                    const grabbedPlayer = multiplayerGameState.grabs[gameState.playerName].grabbing;
+                    delete multiplayerGameState.grabs[gameState.playerName];
+                    delete multiplayerGameState.grabs[grabbedPlayer];
+                    
+                    // Send grab action to server
+                    sendToServer('grabAction', {
+                        grabs: multiplayerGameState.grabs,
+                        message: `👐 ${gameState.playerName} released ${grabbedPlayer}!`
+                    });
+                } else {
+                    // Try to grab someone nearby
+                    Object.values(multiplayerGameState.players).forEach(otherPlayer => {
+                        if (otherPlayer.name === gameState.playerName) return;
+                        if (multiplayerGameState.grabs[otherPlayer.name]) return; // Skip if already being grabbed
+                        
+                        // Check distance
+                        const dx = player.x - otherPlayer.x;
+                        const dy = player.y - otherPlayer.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < multiplayerGameState.grabRange) {
+                            // Grab the other player
+                            multiplayerGameState.grabs[gameState.playerName] = {
+                                grabbing: otherPlayer.name,
+                                startTime: Date.now()
+                            };
+                            multiplayerGameState.grabs[otherPlayer.name] = {
+                                beingGrabbedBy: gameState.playerName
+                            };
+                            
+                            // Send grab action to server
+                            sendToServer('grabAction', {
+                                grabs: multiplayerGameState.grabs,
+                                message: `🤏 ${gameState.playerName} grabbed ${otherPlayer.name}!`
+                            });
+                        }
+                    });
+                }
+                
+                // Prevent rapid G key spam
+                keys['g'] = false;
+                keys['G'] = false;
+            }
+            
+            // Handle struggle (break free) when being grabbed
+            if ((keys[' '] || keys[' ']) && multiplayerGameState.grabs[gameState.playerName]?.beingGrabbedBy) {
+                // Space bar struggle to break free
+                const grabberName = multiplayerGameState.grabs[gameState.playerName].beingGrabbedBy;
+                delete multiplayerGameState.grabs[gameState.playerName];
+                delete multiplayerGameState.grabs[grabberName];
+                
+                // Send grab action to server
+                sendToServer('grabAction', {
+                    grabs: multiplayerGameState.grabs,
+                    message: `💪 ${gameState.playerName} struggled free from ${grabberName}!`
+                });
+                
+                // Give a small jump boost when breaking free
+                player.vy = -6;
+                player.grounded = false;
+            }
+            
+            // Update position
+            player.x += player.vx;
+            player.y += player.vy;
+            
+            // Apply grab physics - if being grabbed, follow the grabber
+            if (multiplayerGameState.grabs[gameState.playerName]?.beingGrabbedBy) {
+                const grabberName = multiplayerGameState.grabs[gameState.playerName].beingGrabbedBy;
+                const grabber = multiplayerGameState.players[grabberName];
+                
+                if (grabber) {
+                    // Follow grabber with slight delay and offset
+                    player.x = grabber.x + 20; // Offset to the side
+                    player.y = grabber.y;
+                    player.vx = grabber.vx * 0.8; // Slight lag effect
+                    player.vy = grabber.vy;
+                    player.facing = grabber.facing;
+                }
+            }
+            
+            // Platform collision
+            player.grounded = false;
+            multiplayerGameState.platforms.forEach(platform => {
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y < platform.y + platform.height &&
+                    player.y + player.height > platform.y) {
+                    
+                    if (player.vy > 0 && player.y < platform.y) {
+                        player.y = platform.y - player.height;
+                        player.vy = 0;
+                        player.grounded = true;
+                    }
+                }
+            });
+            
+            // Boundaries
+            player.x = Math.max(0, Math.min(900 - player.width, player.x));
+            player.y = Math.max(0, Math.min(500 - player.height, player.y));
+            
+            // Check collectible collisions
+            multiplayerGameState.collectibles.forEach(item => {
+                if (item.collected) return;
+                
+                const distance = Math.sqrt(
+                    Math.pow(player.x - item.x, 2) + 
+                    Math.pow(player.y - item.y, 2)
+                );
+                
+                if (distance < item.size + player.width/2) {
+                    item.collected = true;
+                    
+                    // Track individual player score for competition
+                    if (!multiplayerGameState.playerScores[gameState.playerName]) {
+                        multiplayerGameState.playerScores[gameState.playerName] = {
+                            hearts: 0,
+                            joycoins: 0,
+                            treasures: 0
+                        };
+                    }
+                    
+                    const playerScore = multiplayerGameState.playerScores[gameState.playerName];
+                    
+                    if (item.type === 'coin') {
+                        playerScore.hearts++;
+                        addMessage('System', `❤️ ${gameState.playerName} collected ${item.itemType}!`);
+                    } else if (item.type === 'joycoin') {
+                        playerScore.joycoins++;
+                        addMessage('System', `⭐ ${gameState.playerName} collected JOY COIN!`);
+                    } else if (item.type === 'gem' || item.type === 'powerup') {
+                        playerScore.treasures++;
+                        
+                        // Apply powerup effects
+                        if (item.effect === 'speed') {
+                            // Rocket powerup - speed boost
+                            const currentPlayer = Object.values(multiplayerGameState.players).find(p => p.name === gameState.playerName);
+                            if (currentPlayer) {
+                                currentPlayer.speedBoost = 3000; // 3 seconds
+                                currentPlayer.originalSpeed = currentPlayer.speed || 5;
+                                currentPlayer.speed = currentPlayer.originalSpeed * 2;
+                                addMessage('System', `🚀 ${gameState.playerName} got ROCKET SPEED! 2x speed for 3 seconds!`);
+                                
+                                // Reset speed after 3 seconds
+                                setTimeout(() => {
+                                    if (currentPlayer) {
+                                        currentPlayer.speed = currentPlayer.originalSpeed;
+                                        currentPlayer.speedBoost = 0;
+                                        addMessage('System', `⏱️ ${gameState.playerName}'s speed boost ended!`);
+                                    }
+                                }, 3000);
+                            }
+                        } else if (item.effect === 'shield' || item.effect === 'jump') {
+                            // Halo powerup - invincibility
+                            const currentPlayer = Object.values(multiplayerGameState.players).find(p => p.name === gameState.playerName);
+                            if (currentPlayer) {
+                                currentPlayer.invincible = 3000; // 3 seconds
+                                addMessage('System', `👼 ${gameState.playerName} got HALO protection! Invincible for 3 seconds!`);
+                                
+                                // Reset invincibility after 3 seconds
+                                setTimeout(() => {
+                                    if (currentPlayer) {
+                                        currentPlayer.invincible = 0;
+                                        addMessage('System', `⏱️ ${gameState.playerName}'s invincibility ended!`);
+                                    }
+                                }, 3000);
+                            }
+                        }
+                        
+                        addMessage('System', `💎 ${gameState.playerName} collected ${item.itemType}!`);
+                    }
+                    
+                    // Update score display
+                    updateSimpleScoreDisplay();
+                    
+                    // Special handling for key collection
+                    if (item.type === 'key') {
+                        multiplayerGameState.hasKey = true;
+                        multiplayerGameState.levelDoor.locked = false;
+                        addMessage('System', `🔑 ${gameState.playerName} found KEY! The level door is now UNLOCKED!`);
+                        
+                        // Notify server of collection
+                        sendToServer('keyFound', {
+                            playerName: gameState.playerName,
+                            itemId: item.id,
+                            playerScore: playerScore
+                        });
+                    } else {
+                        // Notify server of collection with score tracking
+                        sendToServer('collectItem', {
+                            playerName: gameState.playerName,
+                            itemId: item.id,
+                            playerScore: playerScore
+                        });
+                    }
+                }
+            });
+            
+            // Enemy collision detection
+            if (!player.invincible || player.invincible <= 0) {
+                multiplayerGameState.enemies.forEach(enemy => {
+                    if (player.x < enemy.x + enemy.width &&
+                        player.x + player.width > enemy.x &&
+                        player.y < enemy.y + enemy.height &&
+                        player.y + player.height > enemy.y) {
+                        
+                        // Check if player is jumping on enemy
+                        if (player.vy > 0 && player.y < enemy.y) {
+                            // Stomp enemy - remove it
+                            const index = multiplayerGameState.enemies.indexOf(enemy);
+                            if (index > -1) {
+                                multiplayerGameState.enemies.splice(index, 1);
+                                addMessage('System', `👟 ${gameState.playerName} stomped ${enemy.characterType || 'enemy'}!`);
+                                player.vy = -8; // Bounce up
+                            }
+                        } else {
+                            // Take damage - reset player position
+                            player.x = 100;
+                            player.y = 300;
+                            player.vx = 0;
+                            player.vy = 0;
+                            addMessage('System', `💀 ${gameState.playerName} was hit by ${enemy.characterType || 'enemy'}!`);
+                        }
+                    }
+                });
+            }
+            
+            // Level door collision
+            const door = multiplayerGameState.levelDoor;
+            if (!door.locked && 
+                player.x < door.x + door.width &&
+                player.x + player.width > door.x &&
+                player.y < door.y + door.height &&
+                player.y + player.height > door.y) {
+                
+                // Teleport to next level!
+                goToNextLevel();
+            }
+            
+            // Update invulnerability
+            if (player.invulnerable > 0) {
+                player.invulnerable--;
+            }
+            
+            // Send position to server
+            sendToServer('gamePlayerMove', {
+                playerName: gameState.playerName,
+                x: player.x,
+                y: player.y,
+                facing: player.facing
+            });
+        }
+
+        function updateMultiplayerGameObjects() {
+            // Update moving platforms
+            multiplayerGameState.platforms.forEach(platform => {
+                if (platform.type === 'moving') {
+                    platform.moveX += platform.moveSpeed;
+                    if (platform.moveX > platform.moveRange || platform.moveX < 450) {
+                        platform.moveSpeed = -platform.moveSpeed;
+                    }
+                    platform.x = platform.moveX;
+                }
+                
+                if (platform.type === 'falling' && platform.triggered) {
+                    platform.vy = (platform.vy || 0) + 0.5;
+                    platform.y += platform.vy;
+                }
+            });
+            
+            // Update enemies
+            multiplayerGameState.enemies.forEach(enemy => {
+                if (enemy.type === 'walker') {
+                    // Ground enemies that patrol and jump
+                    enemy.x += enemy.vx;
+                    
+                    // Jump occasionally
+                    if (Math.random() < 0.01 && enemy.grounded) {
+                        enemy.vy = -8; // Jump velocity
+                        enemy.grounded = false;
+                    }
+                    
+                    // Patrol boundaries
+                    if (enemy.x <= enemy.patrol.start || enemy.x >= enemy.patrol.end) {
+                        enemy.vx = -enemy.vx;
+                    }
+                } else if (enemy.type === 'jumper') {
+                    // Flying monsters that move in patterns
+                    enemy.jumpTimer++;
+                    
+                    // Flying pattern - sine wave movement
+                    if (enemy.jumpTimer % 120 === 0) {
+                        enemy.vx = (Math.random() - 0.5) * 4;
+                        enemy.vy = (Math.random() - 0.5) * 4;
+                    }
+                    
+                    enemy.x += enemy.vx;
+                    enemy.y += enemy.vy;
+                    
+                    // Keep within bounds
+                    if (enemy.x < 50) enemy.x = 50;
+                    if (enemy.x > 850) enemy.x = 850;
+                    if (enemy.y < 50) enemy.y = 50;
+                    if (enemy.y > 400) enemy.y = 400;
+                }
+                
+                // Apply gravity to all enemies
+                enemy.vy += 0.5;
+                enemy.y += enemy.vy;
+                
+                // Ground collision
+                if (enemy.y > 430) {
+                    enemy.y = 430;
+                    enemy.vy = 0;
+                    enemy.grounded = true;
+                }
+            });
+        }
+
+        function goToNextLevel() {
+            console.log('=== GOING TO NEXT LEVEL ===');
+            
+            // Show scoreboard but don't block - advance immediately
+            showLevelScoreboard();
+            
+            // Advance to next level immediately (don't wait for popup)
+            multiplayerGameState.currentLevel++;
+            
+            // Reset player positions
+            Object.values(multiplayerGameState.players).forEach(player => {
+                player.x = 100;
+                player.y = 300;
+                player.vx = 0;
+                player.vy = 0;
+            });
+            
+            // Load level-specific content
+            loadLevel(multiplayerGameState.currentLevel);
+            
+            // Lock the door again for next level
+            multiplayerGameState.levelDoor.locked = true;
+            multiplayerGameState.hasKey = false;
+            
+            addMessage('System', `🎉 Welcome to LEVEL ${multiplayerGameState.currentLevel}! Find the key to unlock the next door!`);
+            
+            // Notify all players about level change
+            sendToServer('levelChange', {
+                level: multiplayerGameState.currentLevel
+            });
+        }
+
+        function loadLevel(levelNumber) {
+            console.log(`Loading Level ${levelNumber}`);
+            
+            // Set door color based on level - ALL PURPLE NOW!
+            const levelColors = [
+                '#DA70D6', // Level 1: Orchid Purple
+                '#DA70D6', // Level 2: Orchid Purple
+                '#DA70D6', // Level 3: Orchid Purple
+                '#DA70D6', // Level 4: Orchid Purple
+                '#DA70D6', // Level 5: Orchid Purple
+                '#DA70D6'  // Level 6: Orchid Purple
+            ];
+            
+            // Update level door color
+            multiplayerGameState.levelDoor.color = levelColors[levelNumber - 1] || '#DA70D6';
+            
+            // Different level layouts
+            switch(levelNumber) {
+                case 1:
+                    // Level 1 - Original layout
+                    multiplayerGameState.platforms = [
+                        { x: 0, y: 450, width: 900, height: 50, color: '#FFB6C1', type: 'ground'},
+                        {x: 100, y: 380, width: 120, height: 20, color: '#654321', type: 'normal'},
+                        {x: 300, y: 320, width: 100, height: 20, color: '#654321', type: 'normal'},
+                        {x: 450, y: 280, width: 80, height: 20, color: '#654321', type: 'moving', moveX: 450, moveRange: 100, moveSpeed: 1},
+                        {x: 600, y: 350, width: 120, height: 20, color: '#654321', type: 'normal'},
+                        {x: 50, y: 200, width: 80, height: 20, color: '#654321', type: 'normal'},
+                        {x: 750, y: 250, width: 100, height: 20, color: '#654321', type: 'normal'},
+                        {x: 200, y: 150, width: 60, height: 20, color: '#654321', type: 'falling', triggered: false}
+                    ];
+                    multiplayerGameState.collectibles = [
+                        {x: 150, y: 350, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 10, id: 'coin1'},
+                        {x: 350, y: 290, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 10, id: 'coin2'},
+                        {x: 650, y: 320, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 10, id: 'coin3'},
+                        {x: 80, y: 170, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 25, id: 'gem1'},
+                        {x: 800, y: 220, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 25, id: 'gem2'},
+                        {x: 230, y: 120, size: 40, collected: false, color: '#00FF00', type: 'powerup', value: 50, effect: 'speed', id: 'powerup1'},
+                        {x: 400, y: 100, size: 15, collected: false, color: '#FFD700', type: 'key', value: 100, id: 'levelKey'}
+                    ];
+                    multiplayerGameState.enemies = [
+                        {x: 300, y: 430, width: 30, height: 30, vx: 2, color: '#FF0000', type: 'walker', patrol: {start: 250, end: 400}, id: 'enemy1'},
+                        {x: 600, y: 430, width: 30, height: 30, vx: -1.5, color: '#FF0000', type: 'walker', patrol: {start: 550, end: 700}, id: 'enemy2'},
+                        {x: 500, y: 250, width: 25, height: 25, vy: 0, color: '#FF00FF', type: 'jumper', jumpTimer: 0, id: 'enemy3'}
+                    ];
+                    break;
+                    
+                case 2:
+                    // Level 2 - Vertical challenge with cute assets
+                    multiplayerGameState.platforms = [
+                        {x: 0, y: 450, width: 900, height: 50, color: '#FFB6C1', type: 'ground',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Ground'},
+                        {x: 150, y: 350, width: 100, height: 20, color: '#4169E1', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 350, y: 250, width: 80, height: 20, color: '#4169E1', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 550, y: 150, width: 60, height: 20, color: '#4169E1', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 700, y: 100, width: 100, height: 20, color: '#4169E1', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 50, y: 300, width: 80, height: 20, color: '#4169E1', type: 'moving', moveX: 50, moveRange: 150, moveSpeed: 2,
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Moving'},
+                        {x: 250, y: 200, width: 70, height: 20, color: '#4169E1', type: 'moving', moveX: 250, moveRange: 100, moveSpeed: 1.5,
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Moving'}
+                    ];
+                    multiplayerGameState.collectibles = [
+                        {x: 180, y: 320, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 15, id: 'lvl2_coin1',
+                         imagePath: 'https://iili.io/qqFiroN.png', itemType: 'Heart Sparkle 4'},
+                        {x: 380, y: 220, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 15, id: 'lvl2_coin2',
+                         imagePath: 'https://iili.io/qqFi6Pt.png', itemType: 'Heart Sparkle 5'},
+                        {x: 580, y: 120, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 15, id: 'lvl2_coin3',
+                         imagePath: 'https://iili.io/qqFiiKX.png', itemType: 'Heart Sparkle 6'},
+                        {x: 750, y: 70, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 30, id: 'lvl2_gem1',
+                         imagePath: 'https://iili.io/qKA9CjR.png', itemType: 'Cupcake'},
+                        {x: 300, y: 170, size: 40, collected: false, color: '#00FF00', type: 'powerup', value: 75, effect: 'jump', id: 'lvl2_powerup1',
+                         imagePath: 'https://iili.io/qKAdUc7.png', itemType: 'Halo Invincibility'},
+                        {x: 750, y: 50, size: 40, collected: false, color: '#FFD700', type: 'key', value: 150, id: 'levelKey',
+                         imagePath: 'https://iili.io/qqFgsse.png', itemType: 'Violin Angel Key'}
+                    ];
+                    multiplayerGameState.enemies = [
+                        {x: 200, y: 430, width: 30, height: 30, vx: 3, color: '#FF4500', type: 'walker', patrol: {start: 150, end: 350}, id: 'lvl2_enemy1',
+                         imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                        {x: 500, y: 130, width: 25, height: 25, vy: 0, color: '#FF00FF', type: 'jumper', jumpTimer: 0, id: 'lvl2_enemy2',
+                         imagePath: 'https://iili.io/qKA9Xyb.png', characterType: 'Frowny Monster'},
+                        {x: 650, y: 80, width: 20, height: 20, vx: 2, color: '#FF1493', type: 'walker', patrol: {start: 600, end: 750}, id: 'lvl2_enemy3',
+                         imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'}
+                    ];
+                    break;
+                    
+                case 3:
+                    // Level 3 - Maze-like layout with PERFECT cute assets
+                    multiplayerGameState.platforms = [
+                        {x: 0, y: 450, width: 900, height: 50, color: '#FFB6C1', type: 'ground',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Ground'},
+                        {x: 100, y: 380, width: 20, height: 70, color: '#32CD32', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 200, y: 330, width: 150, height: 20, color: '#32CD32', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 400, y: 280, width: 20, height: 50, color: '#32CD32', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 500, y: 230, width: 120, height: 20, color: '#32CD32', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 700, y: 180, width: 20, height: 70, color: '#32CD32', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 750, y: 130, width: 100, height: 20, color: '#32CD32', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 300, y: 380, width: 80, height: 20, color: '#32CD32', type: 'moving', moveX: 300, moveRange: 200, moveSpeed: 2.5,
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Moving'},
+                        {x: 50, y: 280, width: 60, height: 20, color: '#32CD32', type: 'falling', triggered: false,
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Falling'},
+                        {x: 600, y: 330, width: 60, height: 20, color: '#32CD32', type: 'falling', triggered: false,
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Falling'}
+                    ];
+                    multiplayerGameState.collectibles = [
+                        // Heart Sparkles (regular coins)
+                        {x: 120, y: 350, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 20, id: 'lvl3_coin1',
+                         imagePath: 'https://iili.io/qqFivHJ.png', itemType: 'Heart Sparkle 1'},
+                        {x: 250, y: 300, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 20, id: 'lvl3_coin2',
+                         imagePath: 'https://iili.io/qqFiSNR.png', itemType: 'Heart Sparkle 2'},
+                        {x: 420, y: 250, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 20, id: 'lvl3_coin3',
+                         imagePath: 'https://iili.io/qqFieSa.png', itemType: 'Heart Sparkle 3'},
+                        {x: 550, y: 200, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 20, id: 'lvl3_coin4',
+                         imagePath: 'https://iili.io/qqFiroN.png', itemType: 'Heart Sparkle 4'},
+                        
+                        // Joy Coins (special high-value)
+                        {x: 350, y: 350, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 35, id: 'lvl3_joycoin1',
+                         imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                        {x: 750, y: 100, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 35, id: 'lvl3_joycoin2',
+                         imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                        
+                        // Treasures
+                        {x: 720, y: 150, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 40, id: 'lvl3_gem1',
+                         imagePath: 'https://iili.io/qKAdNtf.png', itemType: 'Raspberry'},
+                        {x: 800, y: 100, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 40, id: 'lvl3_gem2',
+                         imagePath: 'https://iili.io/qKA2zDG.png', itemType: 'Ice Cream'},
+                        {x: 350, y: 350, size: 40, collected: false, color: '#00FF00', type: 'powerup', value: 100, effect: 'shield', id: 'lvl3_powerup1',
+                         imagePath: 'https://iili.io/qKAJ3mJ.png', itemType: 'Holo Flower'},
+                        {x: 800, y: 80, size: 40, collected: false, color: '#FFD700', type: 'key', value: 200, id: 'levelKey',
+                         imagePath: 'https://iili.io/qqFgsse.png', itemType: 'Violin Angel Key'}
+                    ];
+                    multiplayerGameState.enemies = [
+                        {x: 150, y: 430, width: 35, height: 35, vx: 2.5, vy: 0, color: '#8B0000', type: 'walker', patrol: {start: 100, end: 300}, id: 'lvl3_enemy1', grounded: true,
+                         imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                        {x: 450, y: 250, width: 30, height: 30, vx: -2, vy: 0, color: '#8B0000', type: 'walker', patrol: {start: 400, end: 600}, id: 'lvl3_enemy2', grounded: true,
+                         imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                        {x: 650, y: 150, width: 25, height: 25, vx: 0, vy: 0, color: '#9400D3', type: 'jumper', jumpTimer: 0, id: 'lvl3_enemy3',
+                         imagePath: 'https://iili.io/qKA9Xyb.png', characterType: 'Frowny Monster'},
+                        {x: 300, y: 200, width: 20, height: 20, vx: 3, vy: 0, color: '#FF1493', type: 'walker', patrol: {start: 250, end: 400}, id: 'lvl3_enemy4', grounded: true,
+                         imagePath: 'https://iili.io/qKAH9AG.png', characterType: 'Glitchy Vortex'}
+                    ];
+                    // Add NPCs for Level 3
+                    multiplayerGameState.npcs = [
+                        {x: 250, y: 400, width: 30, height: 30, id: 'npc1', name: 'Vargas Girl',
+                         imagePath: 'https://iili.io/qKA933F.png', dialogue: [
+                             "This maze is tricky! ",
+                             "Follow the path to find treasures!",
+                             "The violin angel key is at the end!",
+                             "Don't get lost in the maze!"
+                         ], currentDialogue: 0, dialogueTimer: 0},
+                        {x: 650, y: 400, width: 30, height: 30, id: 'npc2', name: 'Divine Lady',
+                         imagePath: 'https://iili.io/qKuyPBS.png', dialogue: [
+                             "Blessings upon your journey! ",
+                             "Collect all the heart sparkles!",
+                             "The glitchy vortex is dangerous!",
+                             "You are destined for greatness!"
+                         ], currentDialogue: 0, dialogueTimer: 60}
+                    ];
+                    break;
+                    
+                case 4:
+                    // Level 4 - Vertical challenge with PERFECT cute assets
+                    multiplayerGameState.platforms = [
+                        {x: 0, y: 450, width: 900, height: 50, color: '#FFB6C1', type: 'ground',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Ground'},
+                        {x: 80, y: 400, width: 60, height: 20, color: '#FF6347', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 200, y: 350, width: 50, height: 20, color: '#FF6347', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 320, y: 300, width: 40, height: 20, color: '#FF6347', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 420, y: 250, width: 30, height: 20, color: '#FF6347', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 500, y: 200, width: 25, height: 20, color: '#FF6347', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 570, y: 150, width: 20, height: 20, color: '#FF6347', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 620, y: 100, width: 15, height: 20, color: '#FF6347', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 650, y: 50, width: 200, height: 20, color: '#FF6347', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 150, y: 250, width: 100, height: 20, color: '#FF6347', type: 'moving', moveX: 150, moveRange: 300, moveSpeed: 3,
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Moving'},
+                        {x: 400, y: 150, width: 80, height: 20, color: '#FF6347', type: 'moving', moveX: 400, moveRange: 200, moveSpeed: 2,
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Moving'}
+                    ];
+                    multiplayerGameState.collectibles = [
+                        // Heart Sparkles (regular coins)
+                        {x: 100, y: 370, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 25, id: 'lvl4_coin1',
+                         imagePath: 'https://iili.io/qqFivHJ.png', itemType: 'Heart Sparkle 1'},
+                        {x: 220, y: 320, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 25, id: 'lvl4_coin2',
+                         imagePath: 'https://iili.io/qqFiSNR.png', itemType: 'Heart Sparkle 2'},
+                        {x: 340, y: 270, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 25, id: 'lvl4_coin3',
+                         imagePath: 'https://iili.io/qqFieSa.png', itemType: 'Heart Sparkle 3'},
+                        {x: 440, y: 220, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 25, id: 'lvl4_coin4',
+                         imagePath: 'https://iili.io/qqFiroN.png', itemType: 'Heart Sparkle 4'},
+                        {x: 520, y: 170, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 25, id: 'lvl4_coin5',
+                         imagePath: 'https://iili.io/qqFi6Pt.png', itemType: 'Heart Sparkle 5'},
+                        {x: 590, y: 120, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 25, id: 'lvl4_coin6',
+                         imagePath: 'https://iili.io/qqFiiKX.png', itemType: 'Heart Sparkle 6'},
+                        
+                        // Joy Coins (special high-value)
+                        {x: 300, y: 200, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 45, id: 'lvl4_joycoin1',
+                         imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                        {x: 700, y: 80, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 45, id: 'lvl4_joycoin2',
+                         imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                        
+                        // Treasures
+                        {x: 750, y: 20, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 50, id: 'lvl4_gem1',
+                         imagePath: 'https://iili.io/qKA9CjR.png', itemType: 'Cupcake'},
+                        {x: 200, y: 200, size: 40, collected: false, color: '#00FF00', type: 'powerup', value: 150, effect: 'speed', id: 'lvl4_powerup1',
+                         imagePath: 'https://iili.io/qKAdUc7.png', itemType: 'Halo Invincibility'},
+                        {x: 750, y: 0, size: 40, collected: false, color: '#FFD700', type: 'key', value: 300, id: 'levelKey',
+                         imagePath: 'https://iili.io/qqFgsse.png', itemType: 'Violin Angel Key'}
+                    ];
+                    multiplayerGameState.enemies = [
+                        {x: 100, y: 430, width: 25, height: 25, vx: 4, vy: 0, color: '#DC143C', type: 'walker', patrol: {start: 50, end: 200}, id: 'lvl4_enemy1', grounded: true,
+                         imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                        {x: 300, y: 270, width: 20, height: 20, vx: -3, vy: 0, color: '#DC143C', type: 'walker', patrol: {start: 250, end: 400}, id: 'lvl4_enemy2', grounded: true,
+                         imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                        {x: 500, y: 170, width: 20, height: 20, vx: 3.5, vy: 0, color: '#DC143C', type: 'walker', patrol: {start: 450, end: 600}, id: 'lvl4_enemy3', grounded: true,
+                         imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                        {x: 700, y: 30, width: 25, height: 25, vx: 0, vy: 0, color: '#FF1493', type: 'jumper', jumpTimer: 0, id: 'lvl4_enemy4',
+                         imagePath: 'https://iili.io/qKA9Xyb.png', characterType: 'Frowny Monster'}
+                    ];
+                    // Add NPCs for Level 4
+                    multiplayerGameState.npcs = [
+                        {x: 150, y: 400, width: 30, height: 30, id: 'npc1', name: 'Chill Moon',
+                         imagePath: 'https://iili.io/qKAJumG.png', dialogue: [
+                             "This level is vertical! ",
+                             "Watch out for moving platforms!",
+                             "The joy coins are worth 45 points!",
+                             "You're doing amazing! Keep climbing!"
+                         ], currentDialogue: 0, dialogueTimer: 0},
+                        {x: 600, y: 400, width: 30, height: 30, id: 'npc2', name: 'Cool Dog',
+                         imagePath: 'https://iili.io/qKA2nHX.png', dialogue: [
+                             "Yo! This is getting intense! ",
+                             "Collect all the heart sparkles!",
+                             "The halo gives you invincibility!",
+                             "Reach the top for the key!"
+                         ], currentDialogue: 0, dialogueTimer: 60}
+                    ];
+                    break;
+                    
+                case 5:
+                    // Level 5 - Final boss level with PERFECT cute assets
+                    multiplayerGameState.platforms = [
+                        {x: 0, y: 450, width: 900, height: 50, color: '#FFB6C1', type: 'ground',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Ground'},
+                        {x: 100, y: 380, width: 100, height: 20, color: '#9400D3', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 300, y: 320, width: 80, height: 20, color: '#9400D3', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 500, y: 280, width: 60, height: 20, color: '#9400D3', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 650, y: 240, width: 40, height: 20, color: '#9400D3', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 750, y: 200, width: 100, height: 20, color: '#9400D3', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 200, y: 200, width: 150, height: 20, color: '#9400D3', type: 'normal',
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Platform'},
+                        {x: 400, y: 150, width: 80, height: 20, color: '#9400D3', type: 'moving', moveX: 400, moveRange: 200, moveSpeed: 3,
+                         imagePath: 'https://iili.io/qKAHs5u.png', platformType: 'Holo Glitter Moving'}
+                    ];
+                    multiplayerGameState.collectibles = [
+                        // Heart Sparkles (regular coins)
+                        {x: 150, y: 350, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 30, id: 'lvl5_coin1',
+                         imagePath: 'https://iili.io/qqFivHJ.png', itemType: 'Heart Sparkle 1'},
+                        {x: 350, y: 300, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 30, id: 'lvl5_coin2',
+                         imagePath: 'https://iili.io/qqFiSNR.png', itemType: 'Heart Sparkle 2'},
+                        {x: 550, y: 250, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 30, id: 'lvl5_coin3',
+                         imagePath: 'https://iili.io/qqFieSa.png', itemType: 'Heart Sparkle 3'},
+                        {x: 700, y: 200, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 30, id: 'lvl5_coin4',
+                         imagePath: 'https://iili.io/qqFiroN.png', itemType: 'Heart Sparkle 4'},
+                        
+                        // Joy Coins (special high-value)
+                        {x: 250, y: 250, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 50, id: 'lvl5_joycoin1',
+                         imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                        {x: 600, y: 150, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 50, id: 'lvl5_joycoin2',
+                         imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                        {x: 450, y: 200, size: 28, collected: false, color: '#FF1493', type: 'joycoin', value: 50, id: 'lvl5_joycoin3',
+                         imagePath: 'https://iili.io/qKA9itR.png', itemType: 'Joy Coin'},
+                        
+                        // Treasures
+                        {x: 800, y: 170, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 75, id: 'lvl5_gem1',
+                         imagePath: 'https://iili.io/qKAdNtf.png', itemType: 'Raspberry'},
+                        {x: 100, y: 150, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 75, id: 'lvl5_gem2',
+                         imagePath: 'https://iili.io/qKA2zDG.png', itemType: 'Ice Cream'},
+                        {x: 650, y: 100, size: 40, collected: false, color: '#00FF00', type: 'powerup', value: 200, effect: 'jump', id: 'lvl5_powerup1',
+                         imagePath: 'https://iili.io/qKAdgS9.png', itemType: 'Rocket Speed'},
+                        {x: 400, y: 100, size: 40, collected: false, color: '#FFD700', type: 'key', value: 500, id: 'levelKey',
+                         imagePath: 'https://iili.io/qqFgsse.png', itemType: 'Violin Angel Key'}
+                    ];
+                    multiplayerGameState.enemies = [
+                        {x: 200, y: 430, width: 40, height: 40, vx: 5, vy: 0, color: '#8B0000', type: 'walker', patrol: {start: 100, end: 400}, id: 'lvl5_enemy1', grounded: true,
+                         imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                        {x: 500, y: 270, width: 35, height: 35, vx: -4, vy: 0, color: '#8B0000', type: 'walker', patrol: {start: 400, end: 600}, id: 'lvl5_enemy2', grounded: true,
+                         imagePath: 'https://iili.io/qKAHjUX.png', characterType: 'Cat Gremlin'},
+                        {x: 700, y: 200, width: 30, height: 30, vx: 0, vy: 0, color: '#FF1493', type: 'jumper', jumpTimer: 0, id: 'lvl5_enemy3',
+                         imagePath: 'https://iili.io/qKA9Xyb.png', characterType: 'Frowny Monster'},
+                        {x: 400, y: 120, width: 25, height: 25, vx: 0, vy: 0, color: '#FF1493', type: 'jumper', jumpTimer: 0, id: 'lvl5_enemy4',
+                         imagePath: 'https://iili.io/qKA9Xyb.png', characterType: 'Frowny Monster'}
+                    ];
+                    // Add NPCs for Level 5
+                    multiplayerGameState.npcs = [
+                        {x: 300, y: 400, width: 30, height: 30, id: 'npc1', name: 'Vargas Girl',
+                         imagePath: 'https://iili.io/qKA933F.png', dialogue: [
+                             "This is the final level! ",
+                             "The boss enemies are tough!",
+                             "Joy coins are worth 50 points!",
+                             "You're almost at the end!"
+                         ], currentDialogue: 0, dialogueTimer: 0},
+                        {x: 600, y: 400, width: 30, height: 30, id: 'npc2', name: 'Divine Lady',
+                         imagePath: 'https://iili.io/qKuyPBS.png', dialogue: [
+                             "Final blessings! ",
+                             "Collect everything for maximum score!",
+                             "The rocket speed will help!",
+                             "Victory is within reach!"
+                         ], currentDialogue: 0, dialogueTimer: 60}
+                    ];
+                    break;
+                    
+                default:
+                    // Loop back to level 1 if beyond 5
+                    multiplayerGameState.currentLevel = 1;
+                    loadLevel(1);
+                    addMessage('System', `🎊 You've completed all levels! Starting again from Level 1!`);
+                    return;
+            }
+            
+            // Update level door
+            multiplayerGameState.levelDoor.level = multiplayerGameState.currentLevel + 1;
+            
+            console.log(`Level ${levelNumber} loaded successfully`);
+        }
+
+        // Preload background images at game start
+        function preloadBackgrounds() {
+            console.log('🔄 Preloading background images...');
+            
+            // Simple direct background loading
+            multiplayerGameState.backgroundImages = {};
+            
+            // Load backgrounds directly with CORRECT ietsy URLs
+            const bg1 = new Image();
+            bg1.src = 'https://i.etsystatic.com/8888900/r/il/4c3768/7572547161/il_fullxfull.7572547161_o6pu.jpg';
+            bg1.onload = () => console.log('✅ BG1 loaded');
+            bg1.onerror = () => console.log('❌ BG1 failed');
+            multiplayerGameState.backgroundImages[1] = bg1;
+            
+            const bg4 = new Image();
+            bg4.src = 'https://i.etsystatic.com/8888900/r/il/4c3768/7572547161/il_fullxfull.7572547161_o6pu.jpg';
+            bg4.onload = () => console.log('✅ BG4 loaded');
+            bg4.onerror = () => console.log('❌ BG4 failed');
+            multiplayerGameState.backgroundImages[4] = bg4;
+            
+            const bg6 = new Image();
+            bg6.src = 'https://i.etsystatic.com/8888900/r/il/4c3768/7572547161/il_fullxfull.7572547161_o6pu.jpg';
+            bg6.onload = () => console.log('✅ BG6 loaded');
+            bg6.onerror = () => console.log('❌ BG6 failed');
+            multiplayerGameState.backgroundImages[6] = bg6;
+        }
+
+        // Draw background with preloaded images
+        function drawLevelBackground(ctx, level) {
+            if (!multiplayerGameState.backgroundImages) {
+                preloadBackgrounds();
+                return;
+            }
+            
+            // Get background for current level
+            let bgImage;
+            if (level <= 3) {
+                bgImage = multiplayerGameState.backgroundImages[1];
+            } else if (level <= 5) {
+                bgImage = multiplayerGameState.backgroundImages[4];
+            } else {
+                bgImage = multiplayerGameState.backgroundImages[6];
+            }
+            
+            // JUST DRAW THE BACKGROUND!
+            if (bgImage) {
+                console.log('🎨 DRAWING BACKGROUND!');
+                try {
+                    ctx.drawImage(bgImage, 0, 0, 900, 500);
+                } catch (e) {
+                    console.log('❌ Background draw error:', e);
+                }
+            } else {
+                console.log('❌ NO BACKGROUND IMAGE!');
+            }
+        }
+
+        function drawMultiplayerGameObjects(ctx) {
+            // Draw background based on level
+            drawLevelBackground(ctx, multiplayerGameState.currentLevel);
+            
+            // Draw platforms with optimized asset loading
+            multiplayerGameState.platforms.forEach(platform => {
+                // Use cached image instead of creating new ones
+                const cachedImage = assetCache.images[platform.imagePath];
+                
+                // Draw platform if cached image is available and loaded
+                if (cachedImage && cachedImage.complete) {
+                    ctx.imageSmoothingEnabled = false;
+                    
+                    // Create tiled effect for larger platforms
+                    if (platform.width > 64) {
+                        const tileWidth = 64;
+                        for (let x = 0; x < platform.width; x += tileWidth) {
+                            const drawWidth = Math.min(tileWidth, platform.width - x);
+                            ctx.drawImage(cachedImage, 
+                                platform.x + x, platform.y, 
+                                drawWidth, platform.height);
+                        }
+                    } else {
+                        ctx.drawImage(cachedImage, platform.x, platform.y, platform.width, platform.height);
+                    }
+                } else {
+                    // Fast fallback to colored rectangle
+                    ctx.fillStyle = platform.color;
+                    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                    
+                    // Simple highlight
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.fillRect(platform.x, platform.y, platform.width, 4);
+                }
+            });
+            
+            // Draw collectibles with optimized asset loading
+            multiplayerGameState.collectibles.forEach(item => {
+                if (item.collected) return;
+                
+                // Use cached image instead of creating new ones
+                const cachedImage = assetCache.images[item.imagePath];
+                
+                // Draw collectible if cached image is available and loaded
+                if (cachedImage && cachedImage.complete) {
+                    ctx.imageSmoothingEnabled = false;
+                    
+                    // Add pulsing effect for key
+                    if (item.type === 'key') {
+                        const pulse = Math.sin(Date.now() * 0.005) * 0.2 + 1;
+                        ctx.save();
+                        ctx.translate(item.x, item.y);
+                        ctx.scale(pulse, pulse);
+                        ctx.drawImage(cachedImage, -item.size/2, -item.size/2, item.size, item.size);
+                        ctx.restore();
+                    } else {
+                        ctx.drawImage(cachedImage, item.x - item.size/2, item.y - item.size/2, item.size, item.size);
+                    }
+                } else {
+                    // Fast fallback to colored circles
+                    ctx.fillStyle = item.color;
+                    ctx.beginPath();
+                    ctx.arc(item.x, item.y, item.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Draw level door with scan lines effect
+            const door = multiplayerGameState.levelDoor;
+            
+            // Load door image if not loaded
+            if (!door.imageLoaded) {
+                door.image = new Image();
+                door.image.crossOrigin = 'anonymous';
+                door.image.src = 'https://iili.io/qKAJMmb.png'; // SCAN LINES
+                door.image.onload = () => {
+                    door.imageLoaded = true;
+                };
+                door.imageLoaded = false;
+            }
+            
+            // Draw door background
+            ctx.fillStyle = door.locked ? door.color : door.unlockedColor;
+            ctx.fillRect(door.x, door.y, door.width, door.height);
+            
+            // Draw scan lines effect if unlocked
+            if (!door.locked && door.image && door.image.complete && door.imageLoaded) {
+                ctx.imageSmoothingEnabled = false;
+                
+                // Add animated scan lines effect
+                const scanOffset = (Date.now() * 0.1) % 20;
+                ctx.save();
+                ctx.globalAlpha = 0.6;
+                for (let i = 0; i < door.height; i += 4) {
+                    const alpha = Math.sin((i + scanOffset) * 0.1) * 0.5 + 0.5;
+                    ctx.globalAlpha = alpha * 0.6;
+                    ctx.drawImage(door.image, 
+                        door.x, door.y + i, 
+                        door.width, 4);
+                }
+                ctx.restore();
+            }
+            
+            // Draw door frame
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(door.x, door.y, door.width, door.height);
+            
+            // Draw door status
+            ctx.fillStyle = door.locked ? '#FF0000' : '#00FF00';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(door.locked ? '🔒' : '🔓', door.x + door.width/2, door.y - 5);
+            ctx.fillText(`LVL ${door.level}`, door.x + door.width/2, door.y + door.height + 15);
+            
+            // Draw enemies with optimized asset loading
+            multiplayerGameState.enemies.forEach(enemy => {
+                // Use cached image instead of creating new ones
+                const cachedImage = assetCache.images[enemy.imagePath];
+                
+                // Draw enemy character if cached image is available and loaded
+                if (cachedImage && cachedImage.complete) {
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.save();
+                    
+                    // Flip image based on movement direction
+                    if (enemy.vx < 0) {
+                        ctx.translate(enemy.x + enemy.width, enemy.y);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(cachedImage, 0, 0, enemy.width, enemy.height);
+                    } else {
+                        ctx.drawImage(cachedImage, enemy.x, enemy.y, enemy.width, enemy.height);
+                    }
+                    
+                    ctx.restore();
+                } else {
+                    // Fast fallback to colored rectangle
+                    ctx.fillStyle = enemy.color;
+                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                }
+            });
+            
+            // Draw NPCs with dialogue
+            multiplayerGameState.npcs.forEach(npc => {
+                // Use cached image for NPC
+                const cachedImage = assetCache.images[npc.imagePath];
+                
+                // Draw NPC character
+                if (cachedImage && cachedImage.complete) {
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(cachedImage, npc.x, npc.y, npc.width, npc.height);
+                } else {
+                    // Fallback to colored rectangle
+                    ctx.fillStyle = '#FFB6C1';
+                    ctx.fillRect(npc.x, npc.y, npc.width, npc.height);
+                }
+                
+                // Draw dialogue bubble
+                npc.dialogueTimer++;
+                if (npc.dialogueTimer < 180) { // Show dialogue for 3 seconds
+                    const currentText = npc.dialogue[npc.currentDialogue];
+                    
+                    // Dialogue bubble
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 2;
+                    
+                    const bubbleX = npc.x - 20;
+                    const bubbleY = npc.y - 40;
+                    const bubbleWidth = 150;
+                    const bubbleHeight = 30;
+                    
+                    // Draw bubble
+                    ctx.beginPath();
+                    ctx.roundRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight, 5);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Draw tail
+                    ctx.beginPath();
+                    ctx.moveTo(npc.x + 15, npc.y);
+                    ctx.lineTo(npc.x + 10, npc.y - 5);
+                    ctx.lineTo(npc.x + 20, npc.y - 5);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Draw text
+                    ctx.fillStyle = '#333';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(currentText, bubbleX + bubbleWidth/2, bubbleY + 18);
+                } else {
+                    // Cycle to next dialogue
+                    npc.currentDialogue = (npc.currentDialogue + 1) % npc.dialogue.length;
+                    npc.dialogueTimer = 0;
+                }
+            });
+        }
+
+        function drawAllPlayers(ctx) {
+            // Draw grab connections first (behind players)
+            Object.entries(multiplayerGameState.grabs).forEach(([grabberName, grabData]) => {
+                if (grabData.grabbing) {
+                    const grabber = multiplayerGameState.players[grabberName];
+                    const grabbed = multiplayerGameState.players[grabData.grabbing];
+                    
+                    if (grabber && grabbed) {
+                        // Draw connection line
+                        ctx.save();
+                        ctx.strokeStyle = '#FF69B4';
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([5, 5]); // Dashed line
+                        ctx.shadowColor = '#FF69B4';
+                        ctx.shadowBlur = 5;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(grabber.x + grabber.width/2, grabber.y + grabber.height/2);
+                        ctx.lineTo(grabbed.x + grabbed.width/2, grabbed.y + grabbed.height/2);
+                        ctx.stroke();
+                        
+                        // Draw "GRABBING!" text above grabber
+                        ctx.fillStyle = '#FF69B4';
+                        ctx.font = 'bold 12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('GRABBING!', grabber.x + grabber.width/2, grabber.y - 10);
+                        
+                        ctx.restore();
+                    }
+                }
+            });
+            
+            Object.values(multiplayerGameState.players).forEach(player => {
+                // Draw player shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(player.x + 4, player.y + player.height - 4, player.width - 8, 6);
+                
+                // Draw player character
+                if (player.image && player.image.complete && player.imageLoaded) {
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.save();
+                    
+                    // Flip image if facing left
+                    if (player.facing === 'left') {
+                        ctx.translate(player.x + player.width, player.y);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(player.image, 0, 0, player.width, player.height);
+                    } else {
+                        ctx.drawImage(player.image, player.x, player.y, player.width, player.height);
+                    }
+                    
+                    ctx.restore();
+                } else {
+                    // Fallback to colored rectangle
+                    ctx.fillStyle = player.glowColor || '#FF69B4';
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+                    
+                    // Draw simple face
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(player.x + 10, player.y + 10, 4, 4);
+                    ctx.fillRect(player.x + player.width - 14, player.y + 10, 4, 4);
+                }
+                
+                // Draw halo effect if player is invincible
+                if (player.invincible && player.invincible > 0) {
+                    ctx.save();
+                    ctx.strokeStyle = '#FFD700';
+                    ctx.lineWidth = 3;
+                    ctx.shadowColor = '#FFD700';
+                    ctx.shadowBlur = 10;
+                    
+                    // Draw halo circle above player
+                    ctx.beginPath();
+                    ctx.arc(player.x + player.width/2, player.y - 10, 15, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Draw inner glow
+                    ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(player.x + player.width/2, player.y - 10, 12, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    ctx.restore();
+                }
+                
+                // Draw invulnerability effect
+                if (player.invulnerable > 0 && Math.floor(player.invulnerable / 10) % 2 === 0) {
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = '#FFF';
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+                    ctx.globalAlpha = 1;
+                }
+                
+                // Draw player name
+                ctx.fillStyle = '#000';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(Object.keys(multiplayerGameState.players).find(name => multiplayerGameState.players[name] === player), 
+                           player.x + player.width/2, player.y - 5);
+            });
+        }
+
+        // Send game chat message
+        function sendGameChatMessage() {
+            const input = document.getElementById('gameChatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                // Send to server
+                sendToServer('gameChat', {
+                    playerName: gameState.playerName,
+                    message: message
+                });
+                
+                input.value = '';
+            }
+        }
+        
+        // Add game chat message to display
+        function addGameChatMessage(playerName, message) {
+            const chatDiv = document.getElementById('gameChatMessages');
+            if (!chatDiv) return;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                margin-bottom: 5px;
+                padding: 5px;
+                border-radius: 5px;
+                background: ${playerName === gameState.playerName ? 'linear-gradient(135deg, #FF69B4, #FFD700)' : 'linear-gradient(135deg, #87CEEB, #98FB98)'};
+                border-left: 3px solid ${playerName === gameState.playerName ? '#FF1493' : '#00CED1'};
+                color: #333;
+                font-weight: bold;
+            `;
+            
+            messageDiv.innerHTML = `<strong>${playerName}:</strong> ${message}`;
+            chatDiv.appendChild(messageDiv);
+            
+            // Auto-scroll to bottom
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        function startGame() {
+            console.log('=== STARTING PLATFORMER (SOLO) ===');
+            showScreen('gameScreen');
+            initGame();
+            
+            // Initialize score display
+            updateSimpleScoreDisplay();
+        }
+
+        function initGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            console.log('=== INITIALIZING PLATFORMER ===');
+            console.log('Player avatar data:', gameState.playerAvatar);
+            console.log('Character ID:', gameState.playerAvatar.characterId);
+            console.log('Image path:', gameState.playerAvatar.imagePath);
+            console.log('Glow color:', gameState.playerAvatar.glowColor);
+            
+            console.log('Canvas found:', !!canvas);
+            console.log('Canvas context found:', !!ctx);
+            
+            // Set canvas to larger size for better gameplay
+            console.log('Setting canvas size to 900x500');
+            canvas.width = 900;
+            canvas.height = 500;
+            console.log('Canvas size:', canvas.width, 'x', canvas.height);
+            
+            // Player object with proper character data
+            let player = {
+                x: 100,
+                y: 300,
+                vx: 0,
+                vy: 0,
+                width: 48,
+                height: 48,
+                speed: 5,
+                jumpPower: 12,
+                grounded: false,
+                facing: 'right', // for sprite direction
+                characterId: gameState.playerAvatar.characterId || 1,
+                imagePath: gameState.playerAvatar.imagePath || 'https://iili.io/qKAJc1S.png',
+                glowColor: gameState.playerAvatar.glowColor || '#FFD700',
+                image: new Image(),
+                imageLoaded: false
+            };
+            
+            console.log('Player object created:', player);
+            
+            // Load character image with proper error handling
+            player.image.crossOrigin = 'anonymous';
+            player.image.src = player.imagePath;
+            console.log('Loading image from:', player.imagePath);
+            
+            player.image.onload = () => {
+                player.imageLoaded = true;
+                console.log('✅ Character image loaded successfully!');
+                console.log('Image dimensions:', player.image.width, 'x', player.image.height);
+                console.log('Image complete:', player.image.complete);
+            };
+            
+            player.image.onerror = (error) => {
+                player.imageLoaded = false;
+                console.log('❌ Failed to load character image, using fallback');
+                console.log('Image error:', error);
+                console.log('Image src:', player.image.src);
+            };
+            
+            // Enhanced platforms for classic platformer feel
+            let platforms = [
+                { x: 0, y: 450, width: 900, height: 50, color: '#FFB6C1', type: 'ground'}, // Ground
+                {x: 100, y: 380, width: 120, height: 20, color: '#654321', type: 'normal'},
+                {x: 300, y: 320, width: 100, height: 20, color: '#654321', type: 'normal'},
+                {x: 450, y: 280, width: 80, height: 20, color: '#654321', type: 'moving', moveX: 450, moveRange: 100, moveSpeed: 1},
+                {x: 600, y: 350, width: 120, height: 20, color: '#654321', type: 'normal'},
+                {x: 50, y: 200, width: 80, height: 20, color: '#654321', type: 'normal'},
+                {x: 750, y: 250, width: 100, height: 20, color: '#654321', type: 'normal'},
+                {x: 200, y: 150, width: 60, height: 20, color: '#654321', type: 'falling', triggered: false}
+            ];
+            
+            // Collectibles with different types
+            let collectibles = [
+                {x: 150, y: 350, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 10},
+                {x: 350, y: 290, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 10},
+                {x: 650, y: 320, size: 24, collected: false, color: '#FFD700', type: 'coin', value: 10},
+                {x: 80, y: 170, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 25},
+                {x: 800, y: 220, size: 32, collected: false, color: '#FF69B4', type: 'gem', value: 25},
+                {x: 230, y: 120, size: 40, collected: false, color: '#00FF00', type: 'powerup', value: 50, effect: 'speed'}
+            ];
+            
+            // Enemies for classic platformer action
+            let enemies = [
+                {x: 300, y: 430, width: 30, height: 30, vx: 2, color: '#FF0000', type: 'walker', patrol: {start: 250, end: 400}},
+                {x: 600, y: 430, width: 30, height: 30, vx: -1.5, color: '#FF0000', type: 'walker', patrol: {start: 550, end: 700}},
+                {x: 500, y: 250, width: 25, height: 25, vy: 0, color: '#FF00FF', type: 'jumper', jumpTimer: 0}
+            ];
+            
+            let score = 0;
+            let lives = 3;
+            let particles = [];
+            let gameRunning = true;
+            let invulnerable = 0;
+            
+            // Create particle effect
+            function createParticles(x, y, color, count = 10) {
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: x,
+                        y: y,
+                        vx: (Math.random() - 0.5) * 8,
+                        vy: (Math.random() - 0.5) * 8,
+                        color: color,
+                        life: 30
+                    });
+                }
+            }
+            
+            // Input handling
+            const keys = {};
+            
+            document.addEventListener('keydown', (e) => {
+                keys[e.key] = true;
+                
+                if (e.key === ' ' && player.grounded && gameRunning) {
+                    player.vy = -player.jumpPower;
+                    player.grounded = false;
+                    createParticles(player.x + player.width/2, player.y + player.height, '#87CEEB', 5);
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+            });
+            
+            // Game loop
+            function gameLoop() {
+                if (!gameRunning) return;
+                
+                // Clear canvas with sky gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#87CEEB');
+                gradient.addColorStop(1, '#98D8E8');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Update platforms (moving platforms)
+                platforms.forEach(platform => {
+                    if (platform.type === 'moving') {
+                        platform.moveX += platform.moveSpeed;
+                        if (platform.moveX > platform.moveRange || platform.moveX < 450) {
+                            platform.moveSpeed = -platform.moveSpeed;
+                        }
+                        platform.x = platform.moveX;
+                    }
+                    
+                    if (platform.type === 'falling' && platform.triggered) {
+                        platform.vy = (platform.vy || 0) + 0.5;
+                        platform.y += platform.vy;
+                    }
+                });
+                
+                // Draw platforms with better styling
+                platforms.forEach(platform => {
+                    // Platform shadow
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                    ctx.fillRect(platform.x + 4, platform.y + 4, platform.width, platform.height);
+                    
+                    // Platform
+                    ctx.fillStyle = platform.color;
+                    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                    
+                    // Platform highlight
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.fillRect(platform.x, platform.y, platform.width, 4);
+                });
+                
+                // Draw collectibles
+                collectibles.forEach(item => {
+                    if (!item.collected) {
+                        ctx.save();
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = item.color;
+                        ctx.fillStyle = item.color;
+                        ctx.beginPath();
+                        ctx.arc(item.x, item.y, item.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                });
+                
+                // Update and draw enemies
+                enemies.forEach(enemy => {
+                    if (enemy.type === 'walker') {
+                        enemy.x += enemy.vx;
+                        if (enemy.x <= enemy.patrol.start || enemy.x >= enemy.patrol.end) {
+                            enemy.vx = -enemy.vx;
+                        }
+                    }
+                    
+                    if (enemy.type === 'jumper') {
+                        enemy.jumpTimer++;
+                        if (enemy.jumpTimer > 60) {
+                            enemy.vy = -8;
+                            enemy.jumpTimer = 0;
+                        }
+                        enemy.vy += 0.5;
+                        enemy.y += enemy.vy;
+                        
+                        // Ground collision for jumper
+                        if (enemy.y > 430) {
+                            enemy.y = 430;
+                            enemy.vy = 0;
+                        }
+                    }
+                    
+                    // Draw enemy
+                    ctx.fillStyle = enemy.color;
+                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                    
+                    // Enemy eyes
+                    ctx.fillStyle = '#FFF';
+                    ctx.fillRect(enemy.x + 5, enemy.y + 5, 4, 4);
+                    ctx.fillRect(enemy.x + enemy.width - 9, enemy.y + 5, 4, 4);
+                });
+                
+                // Update particles
+                particles = particles.filter(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.3; // gravity
+                    p.life--;
+                    
+                    if (p.life > 0) {
+                        ctx.globalAlpha = p.life / 30;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+                        ctx.globalAlpha = 1;
+                        return true;
+                    }
+                    return false;
+                });
+                
+                // Player movement
+                if (keys['ArrowLeft']) {
+                    player.vx = Math.max(-player.speed, player.vx - 0.5);
+                    player.facing = 'left';
+                }
+                if (keys['ArrowRight']) {
+                    player.vx = Math.min(player.speed, player.vx + 0.5);
+                    player.facing = 'right';
+                }
+                
+                // Apply physics
+                player.vy += 0.6; // gravity
+                player.vx *= 0.9; // friction
+                player.x += player.vx;
+                player.y += player.vy;
+                
+                // Platform collision
+                player.grounded = false;
+                platforms.forEach(platform => {
+                    if (player.x < platform.x + platform.width &&
+                        player.x + player.width > platform.x &&
+                        player.y < platform.y + platform.height &&
+                        player.y + player.height > platform.y) {
+                        
+                        if (player.vy > 0 && player.y < platform.y) {
+                            player.y = platform.y - player.height;
+                            player.vy = 0;
+                            player.grounded = true;
+                            
+                            // Trigger falling platform
+                            if (platform.type === 'falling' && !platform.triggered) {
+                                platform.triggered = true;
+                                platform.vy = 0;
+                            }
+                        }
+                    }
+                });
+                
+                // Collectible collision
+                collectibles.forEach(item => {
+                    if (!item.collected) {
+                        const dx = (player.x + player.width/2) - item.x;
+                        const dy = (player.y + player.height/2) - item.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < item.size + player.width/2) {
+                            item.collected = true;
+                            score += item.value;
+                            createParticles(item.x, item.y, item.color);
+                            
+                            // Apply powerup effects
+                            if (item.type === 'powerup' && item.effect === 'speed') {
+                                player.speed = 8;
+                                setTimeout(() => { player.speed = 5; }, 5000);
+                            }
+                        }
+                    }
+                });
+                
+                // Enemy collision
+                if (invulnerable <= 0) {
+                    enemies.forEach(enemy => {
+                        if (player.x < enemy.x + enemy.width &&
+                            player.x + player.width > enemy.x &&
+                            player.y < enemy.y + enemy.height &&
+                            player.y + player.height > enemy.y) {
+                            
+                            // Check if player is jumping on enemy
+                            if (player.vy > 0 && player.y < enemy.y) {
+                                // Stomp enemy
+                                enemies = enemies.filter(e => e !== enemy);
+                                score += 100;
+                                player.vy = -8;
+                                createParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#FF0000', 15);
+                            } else {
+                                // Take damage
+                                lives--;
+                                invulnerable = 120; // 2 seconds of invulnerability
+                                createParticles(player.x + player.width/2, player.y + player.height/2, '#FF0000', 20);
+                                
+                                if (lives <= 0) {
+                                    gameRunning = false;
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    invulnerable--;
+                }
+                
+                // Boundaries
+                player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+                player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+                
+                // Draw player shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(player.x + 4, player.y + player.height - 4, player.width - 8, 6);
+                
+                // Draw player character
+                if (player.image && player.image.complete && player.imageLoaded) {
+                    // Draw character image with pixelated rendering
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.save();
+                    
+                    // Flip image if facing left
+                    if (player.facing === 'left') {
+                        ctx.translate(player.x + player.width, player.y);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(player.image, 0, 0, player.width, player.height);
+                    } else {
+                        ctx.drawImage(player.image, player.x, player.y, player.width, player.height);
+                    }
+                    
+                    ctx.restore();
+                } else {
+                    // Fallback to colored rectangle with character info
+                    ctx.fillStyle = player.glowColor || '#FF69B4';
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+                    
+                    // Draw simple face
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(player.x + 10, player.y + 10, 4, 4);
+                    ctx.fillRect(player.x + player.width - 14, player.y + 10, 4, 4);
+                }
+                
+                // Draw invulnerability effect
+                if (invulnerable > 0 && Math.floor(invulnerable / 10) % 2 === 0) {
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = '#FFF';
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+                    ctx.globalAlpha = 1;
+                }
+                
+                // Draw HUD
+                ctx.fillStyle = '#000';
+                ctx.fillRect(10, 10, 200, 80);
+                ctx.fillStyle = '#FFF';
+                ctx.font = '16px Arial';
+                ctx.fillText(`Score: ${score}`, 20, 30);
+                ctx.fillText(`Lives: ${lives}`, 20, 50);
+                ctx.fillText(`Character: ${player.characterId}`, 20, 70);
+                
+                // Game logic
+                update();
+                render();
+                
+                if (gameRunning && document.getElementById('gameScreen').classList.contains('active')) {
+                    requestAnimationFrame(gameLoop);
+                } else if (!gameRunning) {
+                    // Game over screen
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.font = '48px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2 - 50);
+                    ctx.font = '24px Arial';
+                    ctx.fillText(`Final Score: ${score}`, canvas.width/2, canvas.height/2);
+                    ctx.fillText('Press F5 to restart', canvas.width/2, canvas.height/2 + 50);
+                }
+            }
+            
+            function update() {
+                // Game update logic will go here
+            }
+            
+            function render() {
+                // Game render logic will go here
+            }
+            
+            // Input event listeners
+            document.addEventListener('keydown', (e) => {
+                console.log('Key down:', e.key);
+                if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                console.log('Key up:', e.key);
+                if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                }
+            });
+            
+            // Start the game
+            console.log('🎮 Starting platformer game loop...');
+            console.log('Initial player position:', player.x, player.y);
+            console.log('Platforms count:', platforms.length);
+            console.log('Enemies count:', enemies.length);
+            console.log('Collectibles count:', collectibles.length);
+            gameLoop();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('=== PAGE LOADED ===');
+            console.log('Current screen should be login');
+            console.log('==================');
+            
+            // Start WebSocket connection
+            connectWebSocket();
+            
+            // Set up login button listeners
+            const joinRoomBtn = document.getElementById('joinRoomBtn');
+            const createRoomBtn = document.getElementById('createRoomBtn');
+            
+            if (joinRoomBtn) {
+                joinRoomBtn.addEventListener('click', () => {
+                    console.log('Join Room button clicked');
+                    const roomName = document.getElementById('roomName').value.trim() || 'vapor';
+                    const roomPassword = document.getElementById('roomPassword').value.trim() || 'whim';
+                    
+                    gameState.roomName = roomName;
+                    gameState.roomPassword = roomPassword;
+                    console.log('Joining room:', roomName, 'with password:', roomPassword);
+                    showScreen('character');
+                    setTimeout(initCharacterCreation, 100);
+                });
+            }
+            
+            if (createRoomBtn) {
+                createRoomBtn.addEventListener('click', () => {
+                    console.log('Create Room button clicked');
+                    const roomName = document.getElementById('roomName').value.trim() || 'vapor';
+                    const roomPassword = document.getElementById('roomPassword').value.trim() || 'whim';
+                    
+                    gameState.roomName = roomName;
+                    gameState.roomPassword = roomPassword;
+                    console.log('Creating room:', roomName, 'with password:', roomPassword);
+                    showScreen('character');
+                    setTimeout(initCharacterCreation, 100);
+                });
+            }
+            
+            // Set up confirm character button
+            const confirmCharacterBtn = document.getElementById('confirmCharacterBtn');
+            if (confirmCharacterBtn) {
+                confirmCharacterBtn.addEventListener('click', confirmCharacter);
+            }
+        });
+    </script>
+</body>
+</html>
