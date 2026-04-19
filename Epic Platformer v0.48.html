@@ -940,7 +940,9 @@
 
         function connectWebSocket() {
             try {
-                ws = new WebSocket('ws://localhost:8082');
+                const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsHost = location.hostname === 'localhost' ? 'localhost:3001' : location.host;
+                ws = new WebSocket(wsProto + '//' + wsHost);
                 
                 ws.onopen = () => {
                     console.log('Connected to server');

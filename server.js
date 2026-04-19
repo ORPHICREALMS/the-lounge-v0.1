@@ -47,8 +47,8 @@ const server = http.createServer((req, res) => {
     });
 });
 
-// WebSocket server setup
-const wss = new WebSocket.Server({ port: 8082 });
+// WebSocket server — attached to same HTTP server (required for Render single-port hosting)
+const wss = new WebSocket.Server({ server });
 
 // Room management
 const rooms = new Map();
@@ -409,10 +409,7 @@ wss.on('connection', (ws) => {
     });
 });
 
-console.log('WebSocket server started on port 8082');
-console.log('HTTP server started on port 3001');
-
-// Start HTTP server
-server.listen(3001, () => {
-    console.log('Server running at http://localhost:3001/');
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+    console.log('Server running at http://localhost:' + PORT);
 });
